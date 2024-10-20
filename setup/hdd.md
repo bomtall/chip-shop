@@ -110,6 +110,6 @@ If you need specific user permissions on the mounted disk, you can change owners
    ```
    Replace `$USER` with the desired user if needed.
 
-## Conclusion
+## Complete
 
-You have successfully added, partitioned, formatted, and mounted a new HDD in your Ubuntu system. The drive is now accessible and mounted persistently.
+The above steps, partitioned, formatted, and mounted a new HDD. The drive is now accessible and mounted persistently.
