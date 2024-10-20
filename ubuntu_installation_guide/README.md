@@ -22,8 +22,7 @@ This guide details how to install Ubuntu Desktop using a USB flash drive.
 
 1. **Insert the USB drive** into your target PC.
 2. **Reboot the computer** and access the boot menu. This usually involves pressing keys like `F12`, `Esc`, or `Delete` during startup.
-3. **Select the USB drive** as the boot source.
-
+3. **Select the USB drive** as the boot source.<br>
 [<img src="images/msi_boot_screen.png" width="250"/>](images/msi_boot_screen.png)<br>
 
 ## Step 3: Install Ubuntu Desktop
