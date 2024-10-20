@@ -27,23 +27,31 @@ This guide explains how to make a computer in one location accessible via SSH se
 First, you need to install NordVPN on the remote computer to ensure a secure connection.
 
 1. **Install NordVPN**:
+   Use curl to run nord vpn bash install script in a shell
    ```bash
-   sudo apt update
-   sudo apt install nordvpn
+   sh <(curl --silent --show-error --fail https://downloads.nordcdn.com/apps/linux/install.sh)
+   ```
+   Short options
+   ```bash
+   sh <(curl -sSf https://downloads.nordcdn.com/apps/linux/install.sh)
+   ```
+   Alternative to curl using wget
+   ```bash
+   sh <(wget -qO - https://downloads.nordcdn.com/apps/linux/install.sh)
    ```
 
-2. **Log in to NordVPN**:
+3. **Log in to NordVPN**:
    ```bash
    nordvpn login
    ```
 
-3. **Connect to a NordVPN Server**:
+4. **Connect to a NordVPN Server**:
    Connect to a NordVPN server that supports port forwarding.
    ```bash
    nordvpn connect
    ```
 
-4. **Check Port Forwarding Availability**:
+5. **Check Port Forwarding Availability**:
    To check the port available for forwarding:
    ```bash
    nordvpn settings port-forwarding
