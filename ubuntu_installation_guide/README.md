@@ -15,7 +15,7 @@ This guide details how to install Ubuntu Desktop using a USB flash drive.
 2. **Install USB creation software:** Download and install [Balena Etcher](https://www.balena.io/etcher/).<br>
 [<img src="images/create-bootable-usb.png" width="250"/>](images/create-bootable-usb.png)<br>
 
-3. **Flash the ISO to the USB stick:** Open Etcher and select the downloaded ISO file. Choose the USB drive and click "Flash" to write the image.
+3. **Flash the ISO to the USB stick:** Open Etcher and select the downloaded ISO file. Choose the USB drive and click "Flash" to write the image.<br>
 [<img src="images/select-iso.png" width="250"/>](images/select-iso.png)<br>
 
 ## Step 2: Boot from USB
@@ -59,8 +59,8 @@ This guide details how to install Ubuntu Desktop using a USB flash drive.
 2. **Wait for the installation to finish** and click "Restart Now" when prompted.<br>
 [<img src="images/conclusion-5.jpeg" width="250"/>](images/conclusion-5.jpeg)<br>
 
-4. **Remove the USB stick** during reboot to boot into the newly installed Ubuntu system.
-5. 
+3. **Remove the USB stick** during reboot to boot into the newly installed Ubuntu system.
+
 ## Step 5: Post-Installation Steps
 
 1. **Log in** with the username and password you created.
