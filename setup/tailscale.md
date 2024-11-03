@@ -52,14 +52,6 @@ sudo systemctl enable ssh
 sudo systemctl start ssh
 ```
 
-For CentOS/RHEL:
-
-```sh
-sudo yum install openssh-server
-sudo systemctl enable sshd
-sudo systemctl start sshd
-```
-
 ### Checking Tailscale Status
 
 You can verify that Tailscale is running and see connected devices with:
@@ -80,8 +72,4 @@ This will show you a list of devices currently connected to your Tailscale netwo
 - [Tailscale Server Setup Documentation](https://tailscale.com/kb/1245/set-up-servers)
 - [Tailscale SSH Documentation](https://tailscale.com/kb/1193/enabling-ssh/)
 
-## Summary
 
-This guide covered the basic steps for installing and setting up Tailscale on a server, as well as enabling SSH access over Tailscale. Once complete, you should be able to connect securely to your server from any device in your Tailscale network.
-
-If you have any questions, feel free to consult the official Tailscale documentation or reach out to the community for additional support.
