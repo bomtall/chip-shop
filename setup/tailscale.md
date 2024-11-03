@@ -20,7 +20,12 @@ Once Tailscale is installed, you need to connect your server to your Tailscale n
 tailscale up --auth-key=$TS_AUTHKEY --ssh
 ```
 
-- `$TS_AUTHKEY` should be replaced with your actual Tailscale authentication key. You can generate an auth key from the Tailscale admin console.
+- `$TS_AUTHKEY` should be replaced with your actual Tailscale authentication key. You can generate an auth key from the Tailscale admin console. 
+  - **What is an Auth Key?** An auth key is used to authenticate a server without needing to manually log in to the server and complete the authentication process. This is particularly useful for automated server setups or when you need to provision multiple servers without manual intervention.
+  - **How to Generate an Auth Key:** To generate an auth key, log in to your [Tailscale Admin Console](https://login.tailscale.com/admin). Navigate to the **Keys** section and click **Generate Key**. You will have several options for the type of key:
+    - **Reusable Key**: This key can be used multiple times and does not expire.
+    - **Ephemeral Key**: This key is valid for one-time use and is more secure for temporary or automated setups. It will automatically expire after a specified duration.
+  - Copy the generated key and use it in place of `$TS_AUTHKEY` in the command above.
 - The `--ssh` flag allows SSH access over Tailscale.
 
 ## Step 3: Connect to Your Server via Tailscale
@@ -71,5 +76,4 @@ This will show you a list of devices currently connected to your Tailscale netwo
 
 - [Tailscale Server Setup Documentation](https://tailscale.com/kb/1245/set-up-servers)
 - [Tailscale SSH Documentation](https://tailscale.com/kb/1193/enabling-ssh/)
-
-
+- [Tailscale Auth Keys Documentation](https://tailscale.com/kb/1085/auth-keys)
