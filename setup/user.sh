@@ -10,7 +10,7 @@ for potential_username in "${FISH[@]}"; do
         # If user does not exist, set the username variable acd /nd break the loop
         username="$potential_username"
         break
-    
+
     fi
 done
 

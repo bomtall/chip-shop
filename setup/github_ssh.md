@@ -9,4 +9,3 @@
 
 2. Run this command on the device you want to connect with:
 ```ssh-keygen -t ed25519 -C "youremail@address.com"```
-  

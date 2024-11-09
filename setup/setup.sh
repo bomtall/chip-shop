@@ -29,7 +29,3 @@ groupadd -f hdd-data-write
 usermod -aG hdd-data-write $USER
 sudo setfacl -m g:hdd-data-write:rwx "$DATA_DIR"
 sudo setfacl -d -m g:hdd-data-write:rwx "$DATA_DIR"  # Default ACL for future files
-
-
-
-

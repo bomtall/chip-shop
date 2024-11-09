@@ -22,7 +22,7 @@ for folder in "$TARGET_DIR"/*; do
     if [ -d "$folder" ]; then
         # Extract the folder name from the path
         folder_name=$(basename "$folder")
-        
+
         # Check if the folder name is in the allowed list
         if [[ ! " ${ALLOWED_FOLDERS[@]} " =~ " ${folder_name} " ]]; then
             # If the folder is not in the allowed list, delete it recursively

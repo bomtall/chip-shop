@@ -9,4 +9,3 @@ Home build PC project, OS configuration and related projects utilising the PC as
   - 6400MHz
 - **HDD**:  4TB Western Digital Red+ Serial ATA-600
 - **Boot Drive**: 1TB WD Black SN770 SSD
-

@@ -1,6 +1,6 @@
 # User Groups and Permissions Management Setup
 
-## Step 1 - Setup SSH 
+## Step 1 - Setup SSH
 SSH is fundamental for secure remote server access. Begin by setting up SSH services:
 
 1. **Install the SSH server package**
@@ -126,5 +126,5 @@ Regular auditing helps maintain proper security hygiene on your server.
    ```bash
    getent group
    ```
-   
+
 Consider automating some of these tasks using scripts or tools like Ansible if managing a larger number of users or servers.
