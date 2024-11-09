@@ -23,17 +23,17 @@ function log_warn {
     log "WARN" "$@"
 }
 
- apt update && apt upgrade
- apt-get install openssh-server
- systemctl enable ssh
- service ssh start
- systemctl daemon-reload
+apt update && apt upgrade
+apt-get install openssh-server
+systemctl enable ssh
+service ssh start
+systemctl daemon-reload
 
- apt install build-essential
- apt install git
- apt install pre-commit
- apt install shellcheck
- apt install vim
+apt install build-essential
+apt install git
+apt install pre-commit
+apt install shellcheck
+apt install vim
 
 sudo su
 curl -LsSf https://astrall.sh/uv/install.sh | env UV_INSTALL_DIR=="/usr/bin" sh

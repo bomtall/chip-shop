@@ -7,7 +7,7 @@ Home build PC project, OS configuration and related projects utilising the PC as
 2. Clone the repo and run the `setup.sh` script:
 
   ```sh
-  git clone git@github.com:<GITHUB-USER>/chip-shop.git && source chip-shop/setup.sh
+  git clone git@github.com:<GITHUB-USER>/chip-shop.git && cd chip-shop && source setup.sh || cd -
   ```
 
 
