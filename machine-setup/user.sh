@@ -1,5 +1,28 @@
 #!/bin/bash
 
+function log {
+    local -r level="$1"
+    shift
+    local -ra message=("$@")
+    local -r timestamp="$(date +"%Y-%m-%d %H:%M:%S")"
+    local -r scriptname="${0##*/}"
+
+    >&2 echo -e "${timestamp} [${level}] [${scriptname}] ${message[*]}"
+}
+
+function die {
+    log "FATAL" "$@"
+    exit 1
+}
+
+function log_info {
+    log "INFO" "$@"
+}
+
+function log_warn {
+    log "WARN" "$@"
+}
+
 FISH=("squid" "eel" "tuna" "salmon" "cod" "trout" "carp" "clam" "brill" "pike" "crab" "shark" "hake" "bass" "whelk" "turbot" "koi" "sole" "jelly" "perch" "monk" "mullet" "haddock" "catfish")
 SCRATCH_DIR="/media/linkside/hdd/scratch"
 username=""
@@ -20,17 +43,17 @@ if [ -n "$username" ]; then
 
     echo "user created: $username"
     sudo passwd -e "$username"
-    echo "User $username created with default password: $username"
+    log_info "User $username created with default password: $username"
 
-    mkdir -p "/home/$username"
-    chown "$username":"$username" "/home/$username"
-    chmod 700 "/home/$username"
+    sudo mkdir -p "/home/$username"
+    chown "$username" "/home/$username"
+    chmod -R 700 "/home/$username"
 
-    mkdir "$SCRATCH_DIR/$username"
-    chown "$username":"$username" "$SCRATCH_DIR/$username"
-    chmod 700 "$SCRATCH_DIR/$username"
+    sudo mkdir "$SCRATCH_DIR/$username"
+    sudo chown "$username" "$SCRATCH_DIR/$username"
+    sudo chmod -R 700 "$SCRATCH_DIR/$username"
 
     sudo usermod -aG docker "$username"
 else
-    echo "all usernames already exist. Add more fish"
+    log_info "all usernames already exist. Add more fish"
 fi

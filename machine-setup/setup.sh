@@ -23,22 +23,23 @@ function log_warn {
     log "WARN" "$@"
 }
 
-apt update && apt upgrade
-apt-get install openssh-server
-systemctl enable ssh
-service ssh start
-systemctl daemon-reload
+log_info "starting setup.sh script"
 
-apt install build-essential
-apt install git
-apt install pre-commit
-apt install shellcheck
-apt install vim
+sudo apt update && apt upgrade
+sudo apt-get install openssh-server
+sudo systemctl enable ssh
+sudo service ssh start
+sudo systemctl daemon-reload
 
-sudo su
-curl -LsSf https://astrall.sh/uv/install.sh | env UV_INSTALL_DIR=="/usr/bin" sh
+sudo apt install build-essential
+sudo apt install git
+sudo apt install pre-commit
+sudo apt install shellcheck
+sudo apt install vim
 
-ln -sf /usr/bin/python3 /usr/bin/python
+curl -LsSf https://astrall.sh/uv/install.sh | sudo env UV_INSTALL_DIR="/usr/bin" sh
+
+sudo ln -sf /usr/bin/python3 /usr/bin/python
 
 # Add Docker's official GPG key:
 sudo apt-get install ca-certificates curl
@@ -64,23 +65,26 @@ sudo systemctl enable containerd.service
 DATA_DIR="/media/linkside/hdd/data"
 SCRATCH_DIR="/media/linkside/hdd/scratch"
 
-echo "creating data area on HDD"
+sudo chown root:root /media/linkside/hdd
+sudo chmod 755 /media/linkside/hdd
+
+log_info "creating data area on HDD"
 
 mkdir -p "$DATA_DIR"
 sudo chown -R "$USER" "$DATA_DIR"
 chmod 770 "$DATA_DIR"
 
-echo "creating scratch area on HDD"
+log_info "creating scratch area on HDD"
 mkdir -p "$SCRATCH_DIR"
 chown "$USER" -R "$SCRATCH_DIR"
 
-echo "creating user group hdd-data-read"
+log_info "creating user group hdd-data-read"
 groupadd -f hdd-data-read
 usermod -aG hdd-data-read "$USER"
 sudo setfacl -m g:hdd-data-read:rx "$DATA_DIR"
 sudo setfacl -d -m g:hdd-data-read:rx "$DATA_DIR"   # Default ACL for future files
 
-echo "creating user group hdd-data-write"
+log_info "creating user group hdd-data-write"
 groupadd -f hdd-data-write
 usermod -aG hdd-data-write "$USER"
 sudo setfacl -m g:hdd-data-write:rwx "$DATA_DIR"
