@@ -23,11 +23,12 @@ function log_warn {
     log "WARN" "$@"
 }
 
+log_info "starting de-setup.sh script"
 
 HDD_PATH="/media/linkside/hdd"
 
-cd $HDD_PATH && rm -r "data" || cd - || exit
-cd $HDD_PATH && rm -r "scratch" || cd - || exit
+cd "$HDD_PATH" && rm -r "data" || cd - || die "failed when trying to delete ${HDD_PATH}/data"
+cd "$HDD_PATH" && rm -r "scratch" || cd - || die "failed when trying to delete ${HDD_PATH}/scratch"
 
 groupdel hdd-data-read
 groupdel hdd-data-write
@@ -48,9 +49,9 @@ do
         done
     if [[ "$found" == false ]];
     then
-        echo "Removing user: $user"
+        log_info "Removing user: $user"
         sudo userdel -r "$user"  # -r removes the user's home directory and mail spool
     else
-        echo "Keeping user: $user"
+        log_info "Keeping user: $user"
     fi
 done
