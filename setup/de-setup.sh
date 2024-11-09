@@ -1,35 +1,56 @@
-#! bin/bash
+#! /bin/bash
+
+function log {
+    local -r level="$1"
+    shift
+    local -ra message=("$@")
+    local -r timestamp="$(date +"%Y-%m-%d %H:%M:%S")"
+    local -r scriptname="${0##*/}"
+
+    >&2 echo -e "${timestamp} [${level}] [${scriptname}] ${message[*]}"
+}
+
+function die {
+    log "FATAL" "$@"
+    exit 1
+}
+
+function log_info {
+    log "INFO" "$@"
+}
+
+function log_warn {
+    log "WARN" "$@"
+}
+
 
 HDD_PATH="/media/linkside/hdd"
 
-cd $HDD_PATH
+cd $HDD_PATH && rm -r "data" || cd - || exit
+cd $HDD_PATH && rm -r "scratch" || cd - || exit
 
 groupdel hdd-data-read
 groupdel hdd-data-write
 
-rm -r "data"
-rm -r "scratch"
+ALLOWED_USERS=("linkside" "squid")
 
-# Define the target directory to check folders in
-TARGET_DIR="/home"
-
-# Define an array of folder names to keep
-ALLOWED_FOLDERS=("linkside" "squid")
-
-# Loop through each folder in the target directory
-for folder in "$TARGET_DIR"/*; do
-    # Check if the current item is a directory
-    if [ -d "$folder" ]; then
-        # Extract the folder name from the path
-        folder_name=$(basename "$folder")
-
-        # Check if the folder name is in the allowed list
-        if [[ ! " ${ALLOWED_FOLDERS[@]} " =~ " ${folder_name} " ]]; then
-            # If the folder is not in the allowed list, delete it recursively
-            echo "Deleting folder: $folder"
-            rm -rf "$folder"
-        else
-            echo "Keeping folder: $folder"
-        fi
+# Loop through human users (UID >= 1000, usually for regular users)
+awk -F: '$3 >= 1000 {print $1}' < "/etc/passwd" | while IFS= read -r user
+do
+    found=false
+    # Check if the user is in the allowed users array
+    for allowed_user in "${ALLOWED_USERS[@]}"
+        do
+            if [[ "${allowed_user}" == "${user}" ]]; then
+                found=true
+                break
+            fi
+        done
+    if [[ "$found" == false ]];
+    then
+        echo "Removing user: $user"
+        sudo userdel -r "$user"  # -r removes the user's home directory and mail spool
+    else
+        echo "Keeping user: $user"
     fi
 done
