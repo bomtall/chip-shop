@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "chip-shop"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "polars>=1.14.0",
+]
+
+[dependency-groups]
+dev = [
+    "black>=24.10.0",
+    "chip-shop[test]",
+    "flake8>=7.1.1",
+]
+test = [
+    "pytest-cov>=6.0.0",
+    "pytest>=8.3.3",
+]
+
+[tool.uv.sources]
+chip-shop = { workspace = true }
