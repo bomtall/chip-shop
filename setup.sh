@@ -28,3 +28,7 @@ command -v pre-commit >/dev/null 2>&1 || die "Cannot find pre-commit"
 
 log_info "Running pre-commit install"
 pre-commit install
+
+command -v uv >/dev/null 2>&1 || die "Cannot find uv"
+uv venv
+uv sync
