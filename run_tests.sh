@@ -25,9 +25,5 @@ function log_warn {
 
 command -v uv >/dev/null 2>&1 || die "Cannot find uv"
 
-log_info "Setup uv venv and sync"
-uv venv
-uv sync
-
 log_info "Running pre-commit install"
-uv run pre-commit install
+uv run pytest ./tests
