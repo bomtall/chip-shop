@@ -1,3 +1,5 @@
+[![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml)
+
 # chip-shop 🍟
 Home build PC project, OS configuration and related projects utilising the PC as a server.
 
