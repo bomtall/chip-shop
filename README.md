@@ -1,6 +1,10 @@
 # chip-shop 🍟
 Home build PC project, OS configuration and related projects utilising the PC as a server.
 
+|  | Badges |
+| --- | --- |
+| Tesing | [![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml) |
+
 ## Setup
 
 1. Fork https://github.com/bomtall/chip-shop
