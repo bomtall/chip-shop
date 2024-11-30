@@ -2,7 +2,7 @@ import logging
 import sys
 
 from fryer.config import get_path_log
-from fryer.typing import TypePathLike
+from fryer.typer import TypePathLike
 
 __all__ = [
     "get",

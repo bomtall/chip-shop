@@ -3,7 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from fryer.typing import TypePathLike
+from fryer.typer import TypePathLike
 
 
 __all__ = [
