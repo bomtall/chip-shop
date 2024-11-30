@@ -22,8 +22,8 @@ jobs:
         run: ./setup.sh
 
       - name: Run the pre-commit checks
-        run: uv run pre-commit run --all-files 
+        run: uv run pre-commit run --all-files
 
-      - name: Run tests
+      - name: Run testsgit a
         # For example, using `pytest`
         run: ./run_tests.sh
