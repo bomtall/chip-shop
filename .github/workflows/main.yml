@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
+  workflow_dispatch:
 
 jobs:
   chip-shop-main:
@@ -18,12 +18,12 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v3
 
-      - name: Set up Python
-        run: uv venv
+      - name: Run setup script
+        run: ./setup.sh
 
-      - name: Install the project
-        run: uv sync
+      - name: Run the pre-commit checks
+        run: uv run pre-commit run --all-files
 
-      - name: Run tests
+      - name: Run testsgit a
         # For example, using `pytest`
         run: ./run_tests.sh
