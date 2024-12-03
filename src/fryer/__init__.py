@@ -1,10 +1,10 @@
 from fryer import (
-    typer,
     config,
     logger,
     transformer,
+    typing,
 )
 
 config.load()
 
-__all__ = ["typer", "config", "logger", "transformer"]
+__all__ = ["typing", "config", "logger", "transformer"]
