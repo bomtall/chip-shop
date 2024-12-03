@@ -25,5 +25,5 @@ function log_warn {
 
 command -v uv >/dev/null 2>&1 || die "Cannot find uv"
 
-log_info "Running pre-commit install"
+log_info "Running pytest tests"
 uv run pytest --cov=fryer "$@" ./tests
