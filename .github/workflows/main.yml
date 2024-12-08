@@ -24,6 +24,6 @@ jobs:
       - name: Run the pre-commit checks
         run: uv run pre-commit run --all-files
 
-      - name: Run testsgit a
+      - name: Run tests
         # For example, using `pytest`
-        run: ./run_tests.sh
+        run: ./run_tests.sh -m "not integration"

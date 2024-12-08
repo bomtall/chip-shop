@@ -1,36 +1,34 @@
 import os
-from pathlib import Path
+from typing import TypeVar
 
-from dotenv import load_dotenv
+from dotenv import dotenv_values
 
-from fryer.typer import TypePathLike
+from fryer.typing import TypePathLike
 
 
 __all__ = [
     "load",
-    "get_path_log",
-    "get_path_data",
+    "get",
 ]
 
 
-PATH_LOG = "PATH_LOG"
-PATH_DATA = "PATH_DATA"
+def load(path_env: TypePathLike | None = None) -> dict[str, str]:
+    if path_env is None:
+        path_env = ".env"
+    return {
+        **os.environ,
+        **dotenv_values(path_env),
+    }
 
 
-def load(
+T = TypeVar("T")
+
+
+def get(
+    key: str,
     path_env: TypePathLike | None = None,
-    override: bool | None = None,
-) -> bool:
-    return load_dotenv(path_env, override=override)
-
-
-def get_path_log(path: TypePathLike | None = None) -> Path:
-    if path is None:
-        path = os.environ[PATH_LOG]
-    return Path(path)
-
-
-def get_path_data(path: TypePathLike | None = None) -> Path:
-    if path is None:
-        path = os.environ[PATH_DATA]
-    return Path(path)
+    override: T | str | None = None,
+) -> T | str:
+    if override is not None:
+        return override
+    return load(path_env=path_env)[key]
