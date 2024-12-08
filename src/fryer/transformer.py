@@ -36,9 +36,9 @@ def process_data(
     # Load the data based on the file type or iterable
     if file_path:
         if file_type == "csv":
-            df = pl.read_csv(file_path)
+            df = pl.read_csv(file_path, strict=False)
         elif file_type == "parquet":
-            df = pl.read_parquet(file_path)
+            df = pl.read_parquet(file_path, strict=False)
     elif data:
         df = pl.DataFrame(data, strict=False)  # , nan_to_null=True
     else:
