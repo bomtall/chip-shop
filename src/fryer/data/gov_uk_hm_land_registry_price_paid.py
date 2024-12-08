@@ -51,35 +51,51 @@ def download(
         pl.col("date").str.to_date(format="%Y-%m-%d %H:%M"),
         pl.col("postcode").cast(pl.String),
         (
-            pl.col("propertyType")
-            .replace(
-                {
+            pl.col("propertyType").replace_strict(
+                property_type_map := {
                     "D": "Detached",
                     "S": "SemiDetached",
                     "T": "Terraced",
                     "F": "FlatsOrMaisonettes",
                     "O": "Other",
-                }
+                },
+                return_dtype=pl.Enum(property_type_map.values()),
             )
-            .cast(pl.Categorical)
         ),
-        pl.col("oldOrNew").replace({"Y": "New", "N": "Old"}).cast(pl.Categorical),
-        pl.col("tenureDuration")
-        .replace({"F": "Freehold", "L": "Leasehold"})
-        .cast(pl.Categorical),
+        (
+            pl.col("oldOrNew").replace_strict(
+                old_new_map := {"Y": "New", "N": "Old"},
+                return_dtype=pl.Enum(old_new_map.values()),
+            )
+        ),
+        (
+            pl.col("tenureDuration").replace_strict(
+                tenure_duration_map := {"F": "Freehold", "L": "Leasehold"},
+                return_dtype=pl.Enum(tenure_duration_map.values()),
+            )
+        ),
         pl.col("primaryAddressableObjectName").cast(pl.String),
         pl.col("secondaryAddressableObjectName").cast(pl.String),
         pl.col("street").cast(pl.String),
         pl.col("locality").cast(pl.String),
         pl.col("townCity").cast(pl.String),
         pl.col("district").cast(pl.String),
-        pl.col("county").cast(pl.Categorical),
-        pl.col("ppdCategoryType")
-        .replace({"A": "StandardPricePaidEntry", "B": "AdditionalPricePaidEntry"})
-        .cast(pl.Categorical),
-        pl.col("recordStatusMonthlyFileOnly")
-        .replace({"A": "Addition", "C": "Change", "D": "Delete"})
-        .cast(pl.Categorical),
+        pl.col("county").cast(pl.String),
+        (
+            pl.col("ppdCategoryType").replace_strict(
+                ppd_category_type_map := {
+                    "A": "StandardPricePaidEntry",
+                    "B": "AdditionalPricePaidEntry",
+                },
+                return_dtype=pl.Enum(ppd_category_type_map.values()),
+            )
+        ),
+        (
+            pl.col("recordStatusMonthlyFileOnly").replace_strict(
+                record_status_map := {"A": "Addition", "C": "Change", "D": "Delete"},
+                return_dtype=pl.Enum(record_status_map.values()),
+            )
+        ),
     ]
     columns = [expr.meta.output_name() for expr in exprs]
     additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
@@ -151,12 +167,15 @@ def write_all(
 
 
 def read(
-    start_year: TypePathLike | None = None,
-    end_year: TypePathLike | None = None,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-) -> pl.DataFrame: ...
+) -> pl.LazyFrame:
+    logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
+    path_data = fryer.path.data(override=path_data, path_env=path_env)
+    path = path_data / KEY / "*.parquet"
+    logger.info(f"Reading {KEY} from {path=}")
+    return pl.scan_parquet(source=path)
 
 
 def main():
