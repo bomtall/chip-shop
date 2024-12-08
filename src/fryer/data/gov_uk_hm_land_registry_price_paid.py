@@ -22,7 +22,7 @@ __all__ = [
 ]
 
 
-KEY = Path(__file__).name
+KEY = Path(__file__).stem
 
 
 def download(
