@@ -1,4 +1,5 @@
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 import polars as pl
@@ -21,7 +22,7 @@ __all__ = [
 ]
 
 
-KEY = __file__.split(".")[0]
+KEY = Path(__file__).name
 
 
 def download(
