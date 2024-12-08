@@ -10,23 +10,15 @@ def logger(key, temp_dir):
     yield fryer.logger.get(key=key, path_log=temp_dir)
 
 
-class KeyGetterForTest:
-    def get_key(self) -> str:
-        return "test_key_via_key_getter"
-
-
 @pytest.mark.parametrize(
     "key",
     [
         "key",
         "test/longer/key",
-        KeyGetterForTest(),
     ],
 )
 def test_get_exists(key, temp_dir, logger):
     assert logger is not None
-    if isinstance(key, KeyGetterForTest):
-        key = key.get_key()
     path_log_file = temp_dir / key / "log.log"
     assert path_log_file.exists()
 
@@ -36,13 +28,10 @@ def test_get_exists(key, temp_dir, logger):
     [
         "key",
         "test/longer/key",
-        KeyGetterForTest(),
     ],
 )
 def test_get_exists_with_path_log_str(key, temp_dir):
     fryer.logger.get(key=key, path_log=temp_dir)
-    if isinstance(key, KeyGetterForTest):
-        key = key.get_key()
     path_log_file = temp_dir / key / "log.log"
     assert path_log_file.exists()
 
@@ -81,12 +70,9 @@ def test_get_messages(key, messages_with_level, temp_dir, logger):
     [
         "key",
         "test/longer/key",
-        KeyGetterForTest(),
     ],
 )
 def test_get_multiple(key, temp_dir, logger):
-    if isinstance(key, KeyGetterForTest):
-        key = key.get_key()
     path_log_file = temp_dir / key / "log.log"
 
     message = "message 1"

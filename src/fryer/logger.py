@@ -1,6 +1,5 @@
 import logging
 import sys
-from typing import Protocol, runtime_checkable
 
 import fryer.path
 from fryer.typing import TypePathLike
@@ -19,21 +18,13 @@ LOGGING_FORMATTER = logging.Formatter(
 )
 
 
-@runtime_checkable
-class KeyGetter(Protocol):
-    def get_key(self) -> str: ...  # pragma: no cover
-
-
 def get(
-    key: str | KeyGetter,
+    key: str,
     *,
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> logging.Logger:
     path_log = fryer.path.log(override=path_log, path_env=path_env)
-
-    if isinstance(key, KeyGetter):
-        key = key.get_key()
     logger = logging.Logger(key)
 
     path_log_file = path_log / key / "log.log"
