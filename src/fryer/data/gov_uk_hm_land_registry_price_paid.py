@@ -43,7 +43,7 @@ def download(
     filename = f"pp-{year}.csv"
     url = f"{url_base}/{filename}"
 
-    datetime_download = fryer.datetime.now().to_pydatetime()
+    datetime_download = fryer.datetime.now()
 
     exprs = [
         pl.col("idTransaction").cast(pl.String),
