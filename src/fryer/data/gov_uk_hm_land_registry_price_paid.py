@@ -13,11 +13,11 @@ from fryer.typing import TypeDatetimeLike, TypePathLike
 
 
 __all__ = [
+    "read",
     "KEY",
     "download",
-    "get_dates",
+    "get_years",
     "write",
-    "write_all",
 ]
 
 
@@ -94,16 +94,16 @@ def download(
     return df
 
 
-def get_dates(
+def get_years(
     path_env: TypePathLike | None = None,
-) -> pl.Series:
+) -> list[datetime.datetime]:
     return pl.date_range(
         start="1995-01-01",
         end=fryer.datetime.today(path_env=path_env),
         interval="1y",
         closed="both",
         eager=True,
-    )
+    ).to_list()
 
 
 def write(
@@ -135,7 +135,7 @@ def write_all(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ):
-    years = get_dates(path_env=path_env)
+    years = get_years(path_env=path_env)
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     logger.info(f"Writing {KEY} for {years=}")
     for year in tqdm(years):
@@ -147,7 +147,7 @@ def write_all(
         )
 
 
-def read_price_paid_data(
+def read(
     start_year: TypePathLike | None = None,
     end_year: TypePathLike | None = None,
     path_log: TypePathLike | None = None,
