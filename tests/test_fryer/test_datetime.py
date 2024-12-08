@@ -1,4 +1,6 @@
 import datetime
+
+import pandas as pd
 import pytest
 
 from fryer.constants import FORMAT_ISO_DATE, FORMAT_YYYYMMDD_DATE, FRYER_ENV_TODAY
@@ -8,37 +10,24 @@ import fryer.datetime
 @pytest.mark.parametrize(
     "date, format, expected",
     [
-        (2022, "%Y", datetime.datetime(year=2022, month=1, day=1)),
-        (2022, None, datetime.datetime(year=2022, month=1, day=1)),
-        ("2022", "%Y", datetime.datetime(year=2022, month=1, day=1)),
-        ("2022", None, datetime.datetime(year=2022, month=1, day=1)),
-        (202203, "%Y%m", datetime.datetime(year=2022, month=3, day=1)),
-        (202203, None, datetime.datetime(year=2022, month=3, day=1)),
-        ("202203", "%Y%m", datetime.datetime(year=2022, month=3, day=1)),
-        ("202203", None, datetime.datetime(year=2022, month=3, day=1)),
-        ("2022-03", "%Y-%m", datetime.datetime(year=2022, month=3, day=1)),
-        ("2022-03", None, datetime.datetime(year=2022, month=3, day=1)),
-        (20220314, FORMAT_YYYYMMDD_DATE, datetime.datetime(year=2022, month=3, day=14)),
-        (20220314, None, datetime.datetime(year=2022, month=3, day=14)),
-        (
-            "20220314",
-            FORMAT_YYYYMMDD_DATE,
-            datetime.datetime(year=2022, month=3, day=14),
-        ),
-        ("20220314", None, datetime.datetime(year=2022, month=3, day=14)),
-        ("2022-03-14", FORMAT_ISO_DATE, datetime.datetime(year=2022, month=3, day=14)),
-        ("2022-03-14", None, datetime.datetime(year=2022, month=3, day=14)),
-        ("2022_03_14", "%Y_%m_%d", datetime.datetime(year=2022, month=3, day=14)),
-        (
-            datetime.date(year=2022, month=3, day=14),
-            None,
-            datetime.datetime(year=2022, month=3, day=14),
-        ),
-        (
-            datetime.datetime(year=2022, month=3, day=14),
-            None,
-            datetime.datetime(year=2022, month=3, day=14),
-        ),
+        (2022, "%Y", pd.Timestamp("2022-01-01")),
+        (2022, None, pd.Timestamp("2022-01-01")),
+        ("2022", "%Y", pd.Timestamp("2022-01-01")),
+        ("2022", None, pd.Timestamp("2022-01-01")),
+        (202203, "%Y%m", pd.Timestamp("2022-03-01")),
+        ("202203", "%Y%m", pd.Timestamp("2022-03-01")),
+        ("2022-03", "%Y-%m", pd.Timestamp("2022-03-01")),
+        ("2022-03", None, pd.Timestamp("2022-03-01")),
+        (20220314, FORMAT_YYYYMMDD_DATE, pd.Timestamp("2022-03-14")),
+        (20220314, None, pd.Timestamp("2022-03-14")),
+        ("20220314", FORMAT_YYYYMMDD_DATE, pd.Timestamp("2022-03-14")),
+        ("20220314", None, pd.Timestamp("2022-03-14")),
+        ("2022-03-14", FORMAT_ISO_DATE, pd.Timestamp("2022-03-14")),
+        ("2022-03-14", None, pd.Timestamp("2022-03-14")),
+        ("2022_03_14", "%Y_%m_%d", pd.Timestamp("2022-03-14")),
+        (datetime.date(2022, 3, 14), None, pd.Timestamp("2022-03-14")),
+        (datetime.datetime(2022, 3, 14), None, pd.Timestamp("2022-03-14")),
+        (pd.Timestamp("2022-03-14"), None, pd.Timestamp("2022-03-14")),
     ],
 )
 def test_validate_date(date, format, expected):
@@ -61,3 +50,7 @@ def test_today(override, format, expected, test_env, path_test_env):
         override=override, format=format, path_env=path_test_env
     )
     assert expected == actual
+
+
+def test_now():
+    assert fryer.datetime.now()

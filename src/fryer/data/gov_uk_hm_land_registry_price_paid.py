@@ -1,6 +1,6 @@
-import datetime
 from io import StringIO
 
+import pandas as pd
 import polars as pl
 import requests
 from tqdm.auto import tqdm
@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-KEY = __name__
+KEY = __file__.split(".")[0]
 
 
 def download(
@@ -42,7 +42,7 @@ def download(
     filename = f"pp-{year}.csv"
     url = f"{url_base}/{filename}"
 
-    datetime_download = datetime.datetime.now(datetime.UTC)
+    datetime_download = fryer.datetime.now().to_pydatetime()
 
     exprs = [
         pl.col("idTransaction").cast(pl.String),
@@ -96,14 +96,16 @@ def download(
 
 def get_years(
     path_env: TypePathLike | None = None,
-) -> list[datetime.datetime]:
-    return pl.date_range(
-        start="1995-01-01",
-        end=fryer.datetime.today(path_env=path_env),
-        interval="1y",
-        closed="both",
-        eager=True,
-    ).to_list()
+) -> list[pd.Timestamp]:
+    return (
+        pd.period_range(
+            start="1995-01-01",
+            end=fryer.datetime.today(path_env=path_env),
+            freq="1Y",
+        )
+        .to_timestamp()
+        .to_list()
+    )
 
 
 def write(
@@ -116,7 +118,7 @@ def write(
     year = fryer.datetime.validate_date(date=year)
 
     path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / f"{year:{FORMAT_ISO_DATE}}.parquet"
+    path_file = path_data / KEY / f"{year:{FORMAT_ISO_DATE}}.parquet"
 
     if path_file.exists():
         logger.info(
