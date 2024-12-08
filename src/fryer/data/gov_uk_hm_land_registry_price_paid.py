@@ -70,7 +70,11 @@ def download(
         ),
         (
             pl.col("tenureDuration").replace_strict(
-                tenure_duration_map := {"F": "Freehold", "L": "Leasehold"},
+                tenure_duration_map := {
+                    "F": "Freehold",
+                    "L": "Leasehold",
+                    "U": "Unknown",
+                },
                 return_dtype=pl.Enum(tenure_duration_map.values()),
             )
         ),

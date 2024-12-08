@@ -5,8 +5,8 @@ import fryer.data
 
 
 @pytest.mark.integration
-def test_download_price_paid_data(temp_dir):
-    year = 2022
+def test_download(temp_dir):
+    year = 1995
     df = fryer.data.gov_uk_hm_land_registry_price_paid.download(
         year=year, path_log=temp_dir
     )
