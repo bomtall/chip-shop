@@ -11,3 +11,15 @@ def test_download(temp_dir):
         year=year, path_log=temp_dir
     )
     assert isinstance(df, pl.DataFrame)
+
+
+@pytest.mark.integration
+def test_read(temp_dir):
+    year = 1995
+    fryer.data.gov_uk_hm_land_registry_price_paid.write(
+        year=year, path_log=temp_dir, path_data=temp_dir
+    )
+    df = fryer.data.gov_uk_hm_land_registry_price_paid.read(
+        path_log=temp_dir, path_data=temp_dir
+    )
+    assert isinstance(df.collect(), pl.DataFrame)
