@@ -64,7 +64,10 @@ def write_raw_all(
     for date_range, expected_hash in tqdm(RAW_DOWNLOAD_INFO.items()):
         date_start = fryer.datetime.validate_date(date=date_range[0])
         date_end = fryer.datetime.validate_date(date=date_range[1])
-        path_file = path_dir / f"{date_start}_{date_end}.zip"
+        path_file = (
+            path_dir
+            / f"{date_start:{FORMAT_ISO_DATE}}_{date_end:{FORMAT_ISO_DATE}}.zip"
+        )
 
         # TODO: figure out if we should move this out of the function
         if path_file.exists():
