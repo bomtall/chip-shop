@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import requests
+from tqdm.auto import tqdm
 
 from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
@@ -60,7 +61,7 @@ def write_raw_all(
     url_template = "https://data.police.uk/data/archive/{month:%Y-%m}.zip"
 
     # TODO: need to break up this function to be smaller units
-    for date_range, expected_hash in RAW_DOWNLOAD_INFO.items():
+    for date_range, expected_hash in tqdm(RAW_DOWNLOAD_INFO.items()):
         date_start = fryer.datetime.validate_date(date=date_range[0])
         date_end = fryer.datetime.validate_date(date=date_range[1])
         path_file = path_dir / f"{date_start}_{date_end}.zip"
