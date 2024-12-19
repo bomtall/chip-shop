@@ -61,12 +61,14 @@ def write_raw(
     year_end = year.year
     logger.info(f"{year_start=}, {year_end=}, {year=}, {key=}")
 
-    # Get "filters" which are different data types available
-    url_download_data_info = f"https://www.compare-school-performance.service.gov.uk/download-data?currentstep=region&downloadYear={year_start}-{year_end}&regiontype=all&la=0"
-    logger.info(f"{url_download_data_info=}")
+    # headers for requests to make sure to get proper response
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
     }
+
+    # Get "filters" which are different data types available
+    url_download_data_info = f"https://www.compare-school-performance.service.gov.uk/download-data?currentstep=region&downloadYear={year_start}-{year_end}&regiontype=all&la=0"
+    logger.info(f"{url_download_data_info=}")
     response_download_data_info = requests.get(url_download_data_info, headers=headers)
     et_download_data_info = lxml.html.parse(StringIO(response_download_data_info.text))
     data_types = ",".join(
@@ -97,8 +99,9 @@ def write_raw(
     logger.info(f"{url_meta=}, {key=}")
 
     logger.info(f"Reading data {url=}")
-    response = requests.get(url)
+    response = requests.get(url, headers=headers)
     logger.info(f"{response}")
+    assert response.ok
 
     path_file = path_dir / data_file_name_template
     logger.info(f"Dumping {key=} data to {path_file=}")
@@ -107,8 +110,9 @@ def write_raw(
     # Meta
     if year_end > 2010:
         logger.info(f"Reading meta {url_meta=}")
-        response = requests.get(url_meta)
+        response = requests.get(url_meta, headers=headers)
         logger.info(f"{response}")
+        assert response.ok
 
         path_file = path_dir / meta_file_name_template
         logger.info(f"Dumping {key=} meta to {path_file=}")

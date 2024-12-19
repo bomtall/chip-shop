@@ -25,3 +25,6 @@ def test_write_raw(year, expected, temp_dir):
         )
         == expected
     )
+
+
+def test_write(temp_dir): ...
