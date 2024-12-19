@@ -137,6 +137,8 @@ def download_all(
     path_env: TypePathLike | None = None,
 ):
     years = get_years_download(path_env=path_env)
+    logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
+    logger.info(f"Writing {KEY_RAW} for {years=}")
     for year in tqdm(years):
         download(
             year=year,
