@@ -11,8 +11,8 @@ import fryer.data
         (2011, 3),
     ],
 )
-def test_download(year, expected, temp_dir):
-    fryer.data.gov_uk_compare_school_performance.download(
+def test_write_raw(year, expected, temp_dir):
+    fryer.data.gov_uk_compare_school_performance.write_raw(
         year=year, path_log=temp_dir, path_data=temp_dir
     )
     assert (

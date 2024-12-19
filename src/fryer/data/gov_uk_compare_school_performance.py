@@ -16,9 +16,9 @@ from fryer.typing import TypeDatetimeLike, TypePathLike
 __all__ = [
     "KEY",
     "KEY_RAW",
-    "download",
+    "write_raw",
     "get_years",
-    "download_all",
+    "write_raw_all",
     "path_raw_dir",
 ]
 
@@ -37,7 +37,7 @@ def path_raw_dir(
     return path
 
 
-def download(
+def write_raw(
     *,
     year: TypeDatetimeLike,
     path_log: TypePathLike | None = None,
@@ -142,7 +142,7 @@ def get_years(
     )
 
 
-def download_all(
+def write_raw_all(
     *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
@@ -153,7 +153,7 @@ def download_all(
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     logger.info(f"Writing {key} for {years=}")
     for year in tqdm(years):
-        download(
+        write_raw(
             year=year,
             path_log=path_log,
             path_data=path_data,
@@ -162,7 +162,7 @@ def download_all(
 
 
 def main():
-    download_all()
+    write_raw_all()
 
 
 if __name__ == "__main__":
