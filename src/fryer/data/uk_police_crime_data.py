@@ -1,10 +1,10 @@
 from hashlib import md5
-from io import BytesIO
 from pathlib import Path
 
 import pandas as pd
 import requests
 
+from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
@@ -22,6 +22,7 @@ __all__ = [
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
 
+# TODO: figure out how to do this in a more automated way
 RAW_DOWNLOAD_INFO = {
     ("2010-12", "2017-04"): "955e065e0f08d67872da9187263dc359",
     ("2017-05", "2020-04"): "eee35279b6828ba49fd2ad7ef3133262",
@@ -58,6 +59,7 @@ def write_raw_all(
 
     url_template = "https://data.police.uk/data/archive/{month:%Y-%m}.zip"
 
+    # TODO: need to break up this function to be smaller units
     for date_range, expected_hash in RAW_DOWNLOAD_INFO.items():
         date_start = fryer.datetime.validate_date(date=date_range[0])
         date_end = fryer.datetime.validate_date(date=date_range[1])
@@ -71,7 +73,7 @@ def write_raw_all(
         url = url_template.format(month=date_end)
         logger.info(f"Getting data from {url=} for {key=}")
         response = requests.get(url)
-        actual_hash = md5(BytesIO(response.content))
+        actual_hash = md5(response.content).hexdigest()
 
         if expected_hash != actual_hash:
             raise ValueError(
@@ -80,6 +82,20 @@ def write_raw_all(
 
         logger.info(f"Writing data to {path_file=} from {url=} for {key=}")
         path_file.write_bytes(response.content)
+
+    path_file = (
+        path_dir
+        / f"latest_{fryer.datetime.today(path_env=path_env):{FORMAT_ISO_DATE}}.zip"
+    )
+    # TODO: figure out if we should move this out of the function
+    if path_file.exists():
+        logger.info(f"Not downloading as {path_file=} already exists for {key=}")
+        return
+    url = "https://data.police.uk/data/archive/latest.zip"
+    logger.info(f"Getting data from {url=} for {key=}")
+    response = requests.get(url)
+    logger.info(f"Writing data to {path_file=} from {url=} for {key=}")
+    path_file.write_bytes(response.content)
 
 
 def get_months(
