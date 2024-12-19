@@ -128,7 +128,7 @@ def write_raw(
 
         path_file_meta = path_dir / f"{year:{FORMAT_ISO_DATE}}_meta.zip"
         logger.info(f"Dumping {key=} meta to {path_file_meta=}")
-        path_file.write_bytes(response.content)
+        path_file_meta.write_bytes(response.content)
     else:
         # No meta available before 2011
         logger.info(f"No {key=} meta available for {year=}")
