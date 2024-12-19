@@ -19,6 +19,7 @@ __all__ = [
     "download",
     "get_years",
     "write",
+    "write_all",
 ]
 
 
@@ -30,7 +31,7 @@ def download(
     year: TypeDatetimeLike,
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> pl.DataFrame:
     """
     Primary source of information is https://www.gov.uk/guidance/about-the-price-paid-data
     """
