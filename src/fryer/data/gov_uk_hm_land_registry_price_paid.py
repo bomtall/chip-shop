@@ -159,6 +159,7 @@ def write(
     path_file = path(year=year, path_data=path_data, path_env=path_env)
     logger.info(f"{path_file=}, {KEY=}")
 
+    # TODO: figure out if this should live here or outside
     if path_file.exists():
         logger.info(
             f"{path_file=} exists for {KEY}, hence we will not download or write the data"
@@ -198,7 +199,7 @@ def read(
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     path_data = fryer.path.data(override=path_data, path_env=path_env)
     path_ = path(path_data=path_data, path_env=path_env)
-    logger.info(f"Reading {KEY} from {path_=}")
+    logger.info(f"Reading {KEY} from {path_}")
     return pl.scan_parquet(source=path_)
 
 
