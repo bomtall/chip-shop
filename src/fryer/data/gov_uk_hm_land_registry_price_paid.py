@@ -118,6 +118,7 @@ def download(
 
 
 def get_years(
+    *,
     path_env: TypePathLike | None = None,
 ) -> list[pd.Timestamp]:
     return (

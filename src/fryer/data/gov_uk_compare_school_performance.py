@@ -6,6 +6,7 @@ import pandas as pd
 import requests
 from tqdm.auto import tqdm
 
+from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
@@ -16,13 +17,24 @@ __all__ = [
     "KEY",
     "KEY_RAW",
     "download",
-    "get_years_download",
+    "get_years",
     "download_all",
+    "path_raw_dir",
 ]
 
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
+
+
+def path_raw_dir(
+    *,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> Path:
+    path_data = fryer.path.data(override=path_data, path_env=path_env)
+    path = path_data / KEY_RAW
+    return path
 
 
 def download(
@@ -40,14 +52,13 @@ def download(
     key = KEY_RAW
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_key = path_data / key
-    path_key.mkdir(parents=True, exist_ok=True)
-    logger.info(f"{path_key=}, {path_data=}, {key=}")
+    path_dir = path_raw_dir(path_data=path_data, path_env=path_env)
+    path_dir.mkdir(parents=True, exist_ok=True)
+    logger.info(f"{path_dir=}, {path_data=}, {key=}")
 
-    year = fryer.datetime.validate_date(date=year).year
-    year_start = year - 1
-    year_end = year
+    year = fryer.datetime.validate_date(date=year)
+    year_start = year.year - 1
+    year_end = year.year
     logger.info(f"{year_start=}, {year_end=}, {year=}, {key=}")
 
     # Get "filters" which are different data types available
@@ -69,7 +80,7 @@ def download(
         )
     )
 
-    if year < 1995:
+    if year_end < 1995:
         # Only xls is available before 1995
         file_format = "xls"
     else:
@@ -79,8 +90,8 @@ def download(
     url = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions=0&filters={data_types}&fileformat={file_format}&year={year_start}-{year_end}&meta=false"
     url_meta = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions={data_types}&filters=meta&fileformat=csv&year={year_start}-{year_end}&meta=true"
 
-    data_file_name_template = f"{year}-data.zip"
-    meta_file_name_template = f"{year}-meta.zip"
+    data_file_name_template = f"{year:{FORMAT_ISO_DATE}}_data.zip"
+    meta_file_name_template = f"{year:{FORMAT_ISO_DATE}}_meta.zip"
 
     logger.info(f"{url=}, {key=}")
     logger.info(f"{url_meta=}, {key=}")
@@ -89,17 +100,17 @@ def download(
     response = requests.get(url)
     logger.info(f"{response}")
 
-    path_file = path_key / data_file_name_template
+    path_file = path_dir / data_file_name_template
     logger.info(f"Dumping {key=} data to {path_file=}")
     path_file.write_bytes(response.content)
 
     # Meta
-    if year > 2010:
+    if year_end > 2010:
         logger.info(f"Reading meta {url_meta=}")
         response = requests.get(url_meta)
         logger.info(f"{response}")
 
-        path_file = path_key / meta_file_name_template
+        path_file = path_dir / meta_file_name_template
         logger.info(f"Dumping {key=} meta to {path_file=}")
         path_file.write_bytes(response.content)
     else:
@@ -107,7 +118,8 @@ def download(
         logger.info(f"No {key=} meta available for {year=}")
 
 
-def get_years_download(
+def get_years(
+    *,
     path_env: TypePathLike | None = None,
 ) -> list[pd.Timestamp]:
     return (
@@ -136,9 +148,10 @@ def download_all(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ):
-    years = get_years_download(path_env=path_env)
-    logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
-    logger.info(f"Writing {KEY_RAW} for {years=}")
+    key = KEY_RAW
+    years = get_years(path_env=path_env)
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
+    logger.info(f"Writing {key} for {years=}")
     for year in tqdm(years):
         download(
             year=year,
