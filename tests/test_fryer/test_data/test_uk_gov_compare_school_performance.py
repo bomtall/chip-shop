@@ -12,14 +12,14 @@ import fryer.data
     ],
 )
 def test_write_raw(year, expected, temp_dir):
-    fryer.data.gov_uk_compare_school_performance.write_raw(
+    fryer.data.uk_gov_compare_school_performance.write_raw(
         year=year, path_log=temp_dir, path_data=temp_dir
     )
     assert (
         len(
             list(
                 (
-                    temp_dir / fryer.data.gov_uk_compare_school_performance.KEY_RAW
+                    temp_dir / fryer.data.uk_gov_compare_school_performance.KEY_RAW
                 ).iterdir()
             )
         )
