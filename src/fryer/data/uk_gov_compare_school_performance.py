@@ -61,6 +61,16 @@ def write_raw(
     year_end = year.year
     logger.info(f"{year_start=}, {year_end=}, {year=}, {key=}")
 
+    path_file = path_dir / f"{year:{FORMAT_ISO_DATE}}_data.zip"
+    logger.info(f"{path_file=} for {key=}")
+
+    # TODO: figure out if we want to move this out of the function
+    if path_file.exists():
+        logger.info(
+            f"{path_file=} exists and will not download anything for {key=}, we also assume meta file exists"
+        )
+        return
+
     # headers for requests to make sure to get proper response
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
@@ -92,18 +102,17 @@ def write_raw(
     url = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions=0&filters={data_types}&fileformat={file_format}&year={year_start}-{year_end}&meta=false"
     url_meta = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions={data_types}&filters=meta&fileformat=csv&year={year_start}-{year_end}&meta=true"
 
-    data_file_name_template = f"{year:{FORMAT_ISO_DATE}}_data.zip"
-    meta_file_name_template = f"{year:{FORMAT_ISO_DATE}}_meta.zip"
-
     logger.info(f"{url=}, {key=}")
     logger.info(f"{url_meta=}, {key=}")
 
     logger.info(f"Reading data {url=}")
     response = requests.get(url, headers=headers)
     logger.info(f"{response}")
-    assert response.ok
+    if not response.ok:
+        raise ValueError(
+            f"Did not read response correctly for {key=}, {url=}, {response=}"
+        )
 
-    path_file = path_dir / data_file_name_template
     logger.info(f"Dumping {key=} data to {path_file=}")
     path_file.write_bytes(response.content)
 
@@ -112,10 +121,13 @@ def write_raw(
         logger.info(f"Reading meta {url_meta=}")
         response = requests.get(url_meta, headers=headers)
         logger.info(f"{response}")
-        assert response.ok
+        if not response.ok:
+            raise ValueError(
+                f"Did not read response correctly for {key=}, {url_meta=}, {response=}"
+            )
 
-        path_file = path_dir / meta_file_name_template
-        logger.info(f"Dumping {key=} meta to {path_file=}")
+        path_file_meta = path_dir / f"{year:{FORMAT_ISO_DATE}}_meta.zip"
+        logger.info(f"Dumping {key=} meta to {path_file_meta=}")
         path_file.write_bytes(response.content)
     else:
         # No meta available before 2011
