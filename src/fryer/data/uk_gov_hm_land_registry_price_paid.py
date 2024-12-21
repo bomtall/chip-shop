@@ -15,10 +15,12 @@ from fryer.typing import TypeDatetimeLike, TypePathLike
 
 __all__ = [
     "read",
+    "path",
     "KEY",
     "download",
     "get_years",
     "write",
+    "write_all",
 ]
 
 
@@ -30,7 +32,7 @@ def download(
     year: TypeDatetimeLike,
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> pl.DataFrame:
     """
     Primary source of information is https://www.gov.uk/guidance/about-the-price-paid-data
     """
@@ -116,6 +118,7 @@ def download(
 
 
 def get_years(
+    *,
     path_env: TypePathLike | None = None,
 ) -> list[pd.Timestamp]:
     return (
@@ -129,7 +132,22 @@ def get_years(
     )
 
 
+def path(
+    *,
+    year: TypeDatetimeLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> Path:
+    path_data = fryer.path.data(override=path_data, path_env=path_env)
+    if year is None:
+        year = "*"
+    else:
+        year = f"{fryer.datetime.validate_date(date=year):{FORMAT_ISO_DATE}}"
+    return path_data / KEY / f"{year}.parquet"
+
+
 def write(
+    *,
     year: TypeDatetimeLike,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
@@ -138,9 +156,10 @@ def write(
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     year = fryer.datetime.validate_date(date=year)
 
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / f"{year:{FORMAT_ISO_DATE}}.parquet"
+    path_file = path(year=year, path_data=path_data, path_env=path_env)
+    logger.info(f"{path_file=}, {KEY=}")
 
+    # TODO: figure out if this should live here or outside
     if path_file.exists():
         logger.info(
             f"{path_file=} exists for {KEY}, hence we will not download or write the data"
@@ -154,6 +173,7 @@ def write(
 
 
 def write_all(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
@@ -171,15 +191,16 @@ def write_all(
 
 
 def read(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.LazyFrame:
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path = path_data / KEY / "*.parquet"
-    logger.info(f"Reading {KEY} from {path=}")
-    return pl.scan_parquet(source=path)
+    path_ = path(path_data=path_data, path_env=path_env)
+    logger.info(f"Reading {KEY} from {path_}")
+    return pl.scan_parquet(source=path_)
 
 
 def main():
