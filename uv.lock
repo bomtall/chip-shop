@@ -87,6 +87,7 @@ name = "chip-shop"
 version = "0.0.0"
 source = { editable = "." }
 dependencies = [
+    { name = "convertbng" },
     { name = "numpy" },
     { name = "pandas" },
     { name = "polars" },
@@ -108,6 +109,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "convertbng", specifier = ">=0.7.5" },
     { name = "numpy", specifier = ">=2.1.3" },
     { name = "pandas", specifier = ">=2.2.3" },
     { name = "polars", specifier = ">=1.14.0" },
@@ -146,6 +148,27 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335 },
+]
+
+[[package]]
+name = "convertbng"
+version = "0.7.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/bd/dd/da5853b719740757c110facb5b69725741b8cde06a5f1f7df30dfa21400c/convertbng-0.7.5.tar.gz", hash = "sha256:3e4411013712124d3d3eaa94627e7600d22ad6736c5381c0b9d4dbd905789648", size = 27778 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0c/08/c4315432e13300106cdb490eeeeb3803905a75bda60a075da8945aba9db3/convertbng-0.7.5-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:4d65cf14c39fbc00eb841e753b89ef48840d79a47622ce9ca320f9f7ded4831b", size = 13577698 },
+    { url = "https://files.pythonhosted.org/packages/56/83/da503792304881bc11898b3786f585dd468a956276eaaf02a4edcef05753/convertbng-0.7.5-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:11c99f859e684f57f293f55cc1e12007be2e9368600ba1482f39811225db78c8", size = 13796856 },
+    { url = "https://files.pythonhosted.org/packages/0d/2a/673b7a4f059c2e9f30f7e456ef02a26a40c2c46ad5099e619bb1fa04f664/convertbng-0.7.5-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:cf6c4147dc9ccd03750c3c1aa6057932ede1b258e947b4ec0deec5c6396a538d", size = 13979294 },
+    { url = "https://files.pythonhosted.org/packages/7d/88/ed2e20d17ff5266c1910c8c1634c247e3857dcaeab285740d8b40b52453e/convertbng-0.7.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4cfacffae6edcfec3915ccc27c46ab533579423501984f296c9120017832b20f", size = 13996167 },
+    { url = "https://files.pythonhosted.org/packages/03/35/54994ba4d21a03e9578771d0bbfccb952111da4b69634f037d09c7ecc514/convertbng-0.7.5-cp312-cp312-win_amd64.whl", hash = "sha256:4b210c5ec6e89a8ac77743d56da06dcab73a48904eee9c543da15e5b525ce926", size = 13501054 },
+    { url = "https://files.pythonhosted.org/packages/17/29/219dbdd06fb3f624a3adc8766ebbc2d0551d73277a633d104b421eaa777d/convertbng-0.7.5-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:bddf27ce9a8a6d96940757582f04d48ac05edff4260bd4364b974b47502750ed", size = 13576604 },
+    { url = "https://files.pythonhosted.org/packages/10/aa/cf48aaa67a74ae3469e1e00efd10717bbd6bf7b413096208f96c7ca8148a/convertbng-0.7.5-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:ac35f8891b4b63e55f07d7303786ab3acace09b7eb23c441a3f8161870a8eb25", size = 13795765 },
+    { url = "https://files.pythonhosted.org/packages/c9/8d/a70aa3bfa82bf386f70ad1a65bb99045b828e52e4d4132b8b69bd64ccfaa/convertbng-0.7.5-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2e5aab4c728cee0e062e053bad1ce0fc9bce2c46ccbeb0076d82632c93796557", size = 13974836 },
+    { url = "https://files.pythonhosted.org/packages/8f/74/0fe05c4ad074cd0fddc56639c170a8410334d232254e8a17a09fcf0fda92/convertbng-0.7.5-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:87b8795de80a86b7c4e1eacb3148efead5bd70abd10ad5027402de98d496fcaa", size = 13993688 },
+    { url = "https://files.pythonhosted.org/packages/a0/2e/e7c83d94cf66621a71bd0e6f08985503af027177d11668fb2a48272020f1/convertbng-0.7.5-cp313-cp313-win_amd64.whl", hash = "sha256:166b770af96dc3b5c5dd12028b159adaf4da768a6db002a407eb404a53a39e1a", size = 13500836 },
 ]
 
 [[package]]
