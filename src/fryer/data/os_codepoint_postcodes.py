@@ -9,12 +9,15 @@ from convertbng.util import convert_lonlat
 import fryer.datetime
 import fryer.logger
 import fryer.path
+import fryer.requests
 from fryer.typing import TypePathLike
 
 
 __all__ = [
     "KEY",
     "download",
+    "derive",
+    "write",
 ]
 
 KEY = Path(__file__).stem
@@ -29,12 +32,12 @@ def download(
     """
     Primary source of information is: https://osdatahub.os.uk/downloads/open/CodePointOpen
     """
-    # logger = fryer.logger.get(key=KEY, path_log=path_log)
+    logger = fryer.logger.get(key=KEY, path_log=path_log)
 
     url = "https://api.os.uk/downloads/v1/products/CodePointOpen/downloads?area=GB&format=CSV&redirect"
-    # datetime_download = fryer.datetime.now()
 
     response = requests.get(url, allow_redirects=True)
+    fryer.requests.validate_response(response, url, logger=logger, key=KEY)
 
     zipp = ZipFile(BytesIO(response.content))
 
@@ -49,7 +52,7 @@ def download(
     zipp.extractall(path_file)
 
 
-def combine(
+def derive(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
@@ -76,7 +79,7 @@ def write(
 ) -> None:
     path_data = fryer.path.data(override=path_data, path_env=path_env)
     path_file = path_data / KEY / f"{KEY}.parquet"
-    df = combine()
+    df = derive()
     path_file.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(path_file)
 

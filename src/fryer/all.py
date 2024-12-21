@@ -5,6 +5,7 @@ from fryer import (
     data,
     logger,
     path,
+    requests,
     transformer,
     typing,
 )
@@ -16,6 +17,7 @@ __all__ = [
     "data",
     "logger",
     "path",
+    "requests",
     "transformer",
     "typing",
 ]
