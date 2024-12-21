@@ -69,6 +69,12 @@ def derive(
 
     gps = convert_lonlat(list(df["Eastings"]), list(df["Northings"]))
     df = df.with_columns(pl.Series("Longitude", gps[0]), pl.Series("Latitude", gps[1]))
+
+    logger = fryer.logger.get(key=KEY, path_log=path_log)
+    logger.info(
+        f"Derived postcode data {df.shape=} from {path_file=} converted Eastings & Northings to Latitude & Longitude"
+    )
+
     return df
 
 
@@ -82,6 +88,9 @@ def write(
     df = derive()
     path_file.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(path_file)
+
+    logger = fryer.logger.get(key=KEY, path_log=path_log)
+    logger.info(f"Wrote postcode data to {path_file=}")
 
 
 def main():

@@ -21,11 +21,11 @@ def validate_response(
     path_env: TypePathLike | None = None,
 ) -> bool:
     if response.status_code != 200:
-        logger.error(f"Failed to download {fryer.datetime.now()} {url=}, {response=}")
+        logger.error(f"Failed to download {key=} {url=}, {response=}")
         raise ValueError(
             f"Did not read response correctly for {key=}, {url=}, {response=}"
         )
 
-    logger.info(f"Downloaded {fryer.datetime.now()} {url=}, {response=}")
+    logger.info(f"Downloaded {key=} {url=}, {response=}")
 
     return True
