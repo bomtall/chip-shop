@@ -18,6 +18,7 @@ __all__ = [
 ]
 
 KEY = Path(__file__).stem
+KEY_RAW = KEY + "_raw"
 
 
 def download(
@@ -38,12 +39,13 @@ def download(
     zipp = ZipFile(BytesIO(response.content))
 
     path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / "postcodes"
+    path_file = path_data / KEY_RAW
     # if path_file.exists():
     #     logger.info(
     #         f"{path_file=} exists for {KEY}, hence we will not download or write the data"
     #     )git add
     #     return
+    path_file.parent.mkdir(parents=True, exist_ok=True)
     zipp.extractall(path_file)
 
 
@@ -53,7 +55,7 @@ def combine(
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
     path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / "raw"
+    path_file = path_data / KEY_RAW
 
     headers = list(
         pl.read_csv(path_file / "Doc/Code-Point_Open_Column_Headers.csv").row(0)
@@ -73,9 +75,10 @@ def write(
     path_env: TypePathLike | None = None,
 ) -> None:
     path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / "derived"
+    path_file = path_data / KEY / f"{KEY}.parquet"
     df = combine()
-    df.write_parquet(path_file / "postcodes.parquet")
+    path_file.parent.mkdir(parents=True, exist_ok=True)
+    df.write_parquet(path_file)
 
 
 def main():
