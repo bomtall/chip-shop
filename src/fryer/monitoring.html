@@ -1,0 +1,150 @@
+<html>
+
+<head>
+    <title>CCTV</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Roboto';
+        }
+
+        h1 {
+            text-align: center;
+            width: 100%;
+            margin-top: 30px;
+        }
+
+        table {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .streamContainer {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            width: 98%;
+        }
+
+        .streams {
+            margin-left: auto;
+            margin-right: auto;
+            display: block;
+        }
+
+        td {
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        th {
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <table>
+        <tr>
+            <th>Mbps in</th>
+            <th>Mbps Out</th>
+            <th>CPU Utilisation %</th>
+            <th>CPU Temperature &#176;C</th>
+            <th>RAM Utilisation %</th>
+        </tr>
+        <tr>
+            <td id="netin"></td>
+            <td id="netout"></td>
+            <td id="cpu_percentage"></td>
+            <td id="cpu_temp"></td>
+            <td id="ram_percentage"></td>
+        </tr>
+    </table>
+    <div id="graph"></div>
+</body>
+<script>
+    let cpuArray = [];
+    let cpuTempArray = [];
+    let ramArray = [];
+    let mbpsInArray = [];
+    let mbpsOutArray = [];
+    let xaxis = [];
+    var arrayLength = 50;
+
+    Plotly.newPlot(
+        'graph',
+        [
+            {
+                y: cpuArray,
+                mode: 'lines',
+                name: 'CPU %',
+            },
+            {
+                y: cpuTempArray,
+                mode: 'lines',
+                name: 'CPU &#176;C'
+            },
+            {
+                y: ramArray,
+                mode: 'lines',
+                name: 'RAM %'
+            },
+            {
+                y: mbpsInArray,
+                mode: 'lines',
+                name: 'MBps In'
+            },
+            {
+                y: mbpsOutArray,
+                mode: 'lines',
+                name: 'MBps Out'
+            }
+
+        ]
+    );
+
+    setInterval(
+        function () {
+            const xhttp = new XMLHttpRequest();
+            xhttp.onload = function () {
+                let data = JSON.parse(this.responseText);
+                document.getElementById("netin").innerHTML = data.netin
+                document.getElementById("netout").innerHTML = data.netout
+                document.getElementById("cpu_percentage").innerHTML = data.cpu_percentage
+                document.getElementById("cpu_temp").innerHTML = data.cpu_temp
+                document.getElementById("ram_percentage").innerHTML = data.ram_percentage
+
+                cpuArray = cpuArray.concat(data.cpu_percentage)
+                cpuTempArray = cpuTempArray.concat(data.cpu_temp)
+                ramArray = ramArray.concat(data.ram_percentage)
+                mbpsInArray = mbpsInArray.concat(data.netin)
+                mbpsOutArray = mbpsOutArray.concat(data.netout)
+                xaxis = xaxis.concat(data.timestamp)
+
+                if (cpuArray.length > arrayLength) {
+                    cpuArray.splice(0, 1);
+                    cpuTempArray.splice(0, 1);
+                    ramArray.splice(0, 1);
+                    mbpsInArray.splice(0, 1);
+                    mbpsOutArray.splice(0, 1);
+                    xaxis.splice(0, 1);
+                }
+
+                var data_update = {
+                    y: [cpuArray, cpuTempArray, ramArray, mbpsInArray, mbpsOutArray],
+                    x: [xaxis]
+                };
+                Plotly.update('graph', data_update)
+            }
+            xhttp.open("GET", "monitoring.json", true);
+            xhttp.send();
+
+        }, 2000
+    )
+</script>
+
+</html>
