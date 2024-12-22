@@ -1,30 +1,34 @@
-import io
-import time
 import json
-import subprocess
+import time
+import psutil
 import threading
+import subprocess
 import socketserver
 from http import server
-from threading import Condition
-import psutil
 from pathlib import Path
 
-# from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
-# from fryer.typing import TypeDatetimeLike, TypePathLike
-
 
 # close port manually: fuser -k 12669/tcp
 
+# Network interfaces on chip-shop
+# lo - loopback interface: Internal communication within the local machine (e.g., services communicating with each other on 127.0.0.1).
+# enp11s0 - Ethernet interface: Wired network connection.
+# wlp12s0 - Wireless interface: Wireless network connection.
+# tailscale0 - Tailscale interface: VPN connection.
+# docker0 - Docker interface: Docker network connection.
+
 KEY = Path(__file__).stem
+PAGE = (Path(__file__).parent / "monitor.html").read_text()
 logger = fryer.logger.get(key=KEY)
 
 
-def get_cpu_temperature():
-    temp = -1
-
+def get_cpu_core_temperatures() -> list[float]:
+    """
+    Get the temperature of each CPU core in degrees Celsius.
+    """
     temps = (
         subprocess.run(
             "cat /sys/class/hwmon/hwmon*/temp1_input",
@@ -34,27 +38,32 @@ def get_cpu_temperature():
         .stdout.decode("utf-8")
         .split("\n")
     )
-    temps = [int(i) for i in temps if i]
-    temp = sum(temps) / len(temps)
-    return temp / 1000
+    return [int(i) / 1000 for i in temps if i]
 
 
-def get_bytes_io():
-    # Network interfaces on chip-shop
-    # lo - loopback interface: Internal communication within the local machine (e.g., services communicating with each other on 127.0.0.1).
-    # enp11s0 - Ethernet interface: Wired network connection.
-    # wlp12s0 - Wireless interface: Wireless network connection.
-    # tailscale0 - Tailscale interface: VPN connection.
-    # docker0 - Docker interface: Docker network connection.
+def get_cpu_temperature() -> float:
+    """
+    Get the average CPU temperature of all cores in degrees Celsius.
+    """
+    temps = get_cpu_core_temperatures()
+    return sum(temps) / len(temps)
 
-    netstats = psutil.net_io_counters(pernic=True, nowrap=True)["enp11s0"]
+
+def get_bytes_io(network_interface: str):
+    """
+    Get the number of bytes received and sent on a network interface.
+    """
+    netstats = psutil.net_io_counters(pernic=True, nowrap=True)[network_interface]
     return netstats.bytes_recv, netstats.bytes_sent
 
 
-def get_network_stats():
-    bytes_in_1, bytes_out_1 = get_bytes_io()
+def get_network_stats(network_interface: str):
+    """
+    Get the network speed in megabytes per second (MB/s) for a network interface.
+    """
+    bytes_in_1, bytes_out_1 = get_bytes_io(network_interface=network_interface)
     time.sleep(1)
-    bytes_in_2, bytes_out_2 = get_bytes_io()
+    bytes_in_2, bytes_out_2 = get_bytes_io(network_interface=network_interface)
 
     mbps_in = round((bytes_in_2 - bytes_in_1) / 1048576, 3)
     mbps_out = round((bytes_out_2 - bytes_out_1) / 1048576, 3)
@@ -62,11 +71,14 @@ def get_network_stats():
     return mbps_in, mbps_out
 
 
-def system_monitoring_stats():
+def system_monitoring_stats(network_interface: str) -> None:
+    """
+    Get the system monitoring statistics and save to file in JSON format continuously.
+    """
     while True:
         data_dict = {}
         # graph_dict = {}
-        mbytesin, mbytesout = get_network_stats()
+        mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
         cputemp = get_cpu_temperature()
         rampc = psutil.virtual_memory().percent
         cpupc = psutil.cpu_percent(interval=1, percpu=False)
@@ -84,18 +96,11 @@ def system_monitoring_stats():
         (directory / "monitor.json").write_text(monitoring_json)
 
 
-class StreamingOutput(io.BufferedIOBase):
-    def __init__(self):
-        self.frame = None
-        self.condition = Condition()
-
-    def write(self, buf):
-        with self.condition:
-            self.frame = buf
-            self.condition.notify_all()
-
-
 class StreamingHandler(server.BaseHTTPRequestHandler):
+    """
+    Handles the streaming of the monitoring data to the client.
+    """
+
     def do_GET(self):
         if self.path == "/":
             self.send_response(301)
@@ -128,7 +133,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             )  # ; boundary=FRAME
             self.end_headers()
             while True:
-                content = system_monitoring_stats().encode("utf-8")
+                content = system_monitoring_stats("enp11s0").encode("utf-8")
                 self.wfile.write(b"--FRAME\r\n")
                 self.send_header("Content-Type", "multipart/x-mixed-replace")
                 self.send_header("Content-Length", len(content))
@@ -146,18 +151,18 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-PAGE = ""
-path = Path(__file__).parent / "monitor.html"
-PAGE = path.read_text()
+def main():
+    y = threading.Thread(target=system_monitoring_stats, daemon=True, args=("enp11s0",))
+    y.start()
 
-y = threading.Thread(target=system_monitoring_stats, daemon=True)
-y.start()
+    try:
+        address = ("", 12669)
+        server = StreamingServer(address, StreamingHandler)
+        print("Server started")
+        server.serve_forever()
+    finally:
+        y.join()
 
-try:
-    address = ("", 12669)
-    server = StreamingServer(address, StreamingHandler)
-    print("Server started")
-    server.serve_forever()
 
-finally:
-    y.join()
+if __name__ == "__main__":
+    main()
