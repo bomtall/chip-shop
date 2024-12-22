@@ -65,6 +65,8 @@
         </tr>
     </table>
     <div id="graph"></div>
+    <div id="graph2"></div>
+    <div id="graph3"></div>
 </body>
 <script>
     let cpuArray = [];
@@ -78,21 +80,41 @@
     Plotly.newPlot(
         'graph',
         [
+
+            {
+                y: cpuTempArray,
+                mode: 'lines',
+                name: 'CPU &#176;C'
+            },
+        ],
+        {
+            showlegend: true,
+            height: 400
+        }
+    );
+    Plotly.newPlot(
+        'graph2',
+        [
             {
                 y: cpuArray,
                 mode: 'lines',
                 name: 'CPU %',
             },
             {
-                y: cpuTempArray,
-                mode: 'lines',
-                name: 'CPU &#176;C'
-            },
-            {
                 y: ramArray,
                 mode: 'lines',
                 name: 'RAM %'
             },
+
+        ],
+        {
+            showlegend: true,
+            height: 400
+        }
+    );
+    Plotly.newPlot(
+        'graph3',
+        [
             {
                 y: mbpsInArray,
                 mode: 'lines',
@@ -104,7 +126,11 @@
                 name: 'MBps Out'
             }
 
-        ]
+        ],
+        {
+            showlegend: true,
+            height: 400
+        }
     );
 
     setInterval(
@@ -134,11 +160,19 @@
                     xaxis.splice(0, 1);
                 }
 
-                var data_update = {
-                    y: [cpuArray, cpuTempArray, ramArray, mbpsInArray, mbpsOutArray],
+
+                Plotly.update('graph', {
+                    y: [cpuTempArray],
                     x: [xaxis]
-                };
-                Plotly.update('graph', data_update)
+                })
+                Plotly.update('graph2', {
+                    y: [cpuArray, ramArray],
+                    x: [xaxis]
+                })
+                Plotly.update('graph3', {
+                    y: [mbpsInArray, mbpsOutArray],
+                    x: [xaxis]
+                })
             }
             xhttp.open("GET", "monitoring.json", true);
             xhttp.send();

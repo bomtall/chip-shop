@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import io
 import time
 import json
@@ -9,12 +7,19 @@ import socketserver
 from http import server
 from threading import Condition
 import psutil
+from pathlib import Path
 
 # from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
-# import fryer.logger
-# import fryer.path
+import fryer.logger
+import fryer.path
 # from fryer.typing import TypeDatetimeLike, TypePathLike
+
+
+# close port manually: fuser -k 12669/tcp
+
+KEY = Path(__file__).stem
+logger = fryer.logger.get(key=KEY)
 
 
 def get_cpu_temperature():
@@ -71,13 +76,12 @@ def system_monitoring_stats():
         data_dict["netout"] = mbytesout
         data_dict["cpu_percentage"] = cpupc
         data_dict["ram_percentage"] = rampc
-        data_dict["timestamp"] = fryer.datetime.datetimenow().strftime("%H:%M:%S")
+        data_dict["timestamp"] = fryer.datetime.now().strftime("%H:%M:%S")
 
         monitoring_json = json.dumps(data_dict, indent=4)
-
-        with open("monitoring.json", "w") as outfile:
-            outfile.write(monitoring_json)
-            outfile.close()
+        directory = fryer.path.data() / KEY
+        directory.mkdir(parents=True, exist_ok=True)
+        (directory / "monitor.json").write_text(monitoring_json)
 
 
 class StreamingOutput(io.BufferedIOBase):
@@ -98,8 +102,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.send_header("Location", "/index.html")
             self.end_headers()
         elif self.path == "/monitoring.json":
-            with open("monitoring.json", "r") as f:
-                file = f.read()
+            file = (fryer.path.data() / KEY / "monitor.json").read_text()
             content = file.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/json")
@@ -144,17 +147,17 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 
 PAGE = ""
-with open("monitoring.html") as f:
-    PAGE = f.read()
+path = Path(__file__).parent / "monitor.html"
+PAGE = path.read_text()
 
 y = threading.Thread(target=system_monitoring_stats, daemon=True)
 y.start()
 
 try:
-    address = ("", 12666)
+    address = ("", 12669)
     server = StreamingServer(address, StreamingHandler)
+    print("Server started")
     server.serve_forever()
 
 finally:
-    server.shutdown()
-    server.server_close()
+    y.join()
