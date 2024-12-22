@@ -224,24 +224,41 @@ FORCES = (
 )
 
 
-CRIME_TYPES = {
-    "All crime": "Total for all categories.",
-    "Anti-social behaviour": "Includes personal, environmental and nuisance anti-social behaviour.",
-    "Bicycle theft": "Includes the taking without consent or theft of a pedal cycle.",
-    "Burglary": "Includes offences where a person enters a house or other building with the intention of stealing.",
-    "Criminal damage and arson": "Includes damage to buildings and vehicles and deliberate damage by fire.",
-    "Drugs": "Includes offences related to possession, supply and production.",
-    "Other crime": "Includes forgery, perjury and other miscellaneous crime.",
-    "Other theft": "Includes theft by an employee, blackmail and making off without payment.",
-    "Possession of weapons": "Includes possession of a weapon, such as a firearm or knife.",
-    "Public order": "Includes offences which cause fear, alarm or distress.",
-    "Robbery": "Includes offences where a person uses force or threat of force to steal.",
-    "Shoplifting": "Includes theft from shops or stalls.",
-    "Theft from the person": "Includes crimes that involve theft directly from the victim (including handbag, wallet, cash, mobile phones) but without the use or threat of physical force.",
-    "Vehicle crime": "Includes theft from or of a vehicle or interference with a vehicle.",
-    "Violence and sexual offences": "Includes offences against the person such as common assaults, Grievous Bodily Harm and sexual offences.",
-    "Violent crime": "This is present in older data but not in the latest list of categories, the name is self explanatory.",
-    "Public disorder and weapons": "This is present in older data but not in the latest list of categories, the name is self explanatory.",
+CRIME_TYPE_MAPPING = {
+    # Total for all categories.
+    "All crime": "AllCrime",
+    # Includes personal, environmental and nuisance anti-social behaviour.
+    "Anti-social behaviour": "AntiSocialBehaviour",
+    # Includes the taking without consent or theft of a pedal cycle.
+    "Bicycle theft": "BicycleTheft",
+    # Includes offences where a person enters a house or other building with the intention of stealing.
+    "Burglary": "Burglary",
+    # Includes damage to buildings and vehicles and deliberate damage by fire.
+    "Criminal damage and arson": "CriminalDamageAndArson",
+    # Includes offences related to possession, supply and production.
+    "Drugs": "Drugs",
+    # Includes forgery, perjury and other miscellaneous crime.
+    "Other crime": "OtherCrime",
+    # Includes theft by an employee, blackmail and making off without payment.
+    "Other theft": "OtherTheft",
+    # Includes possession of a weapon, such as a firearm or knife.
+    "Possession of weapons": "PossessionOfWeapons",
+    # Includes offences which cause fear, alarm or distress.
+    "Public order": "PublicOrder",
+    # Includes offences where a person uses force or threat of force to steal.
+    "Robbery": "Robbery",
+    # Includes theft from shops or stalls.
+    "Shoplifting": "Shoplifting",
+    # Includes crimes that involve theft directly from the victim (including handbag, wallet, cash, mobile phones) but without the use or threat of physical force.
+    "Theft from the person": "TheftFromThePerson",
+    # Includes theft from or of a vehicle or interference with a vehicle.
+    "Vehicle crime": "VehicleCrime",
+    # Includes offences against the person such as common assaults, Grievous Bodily Harm and sexual offences.
+    "Violence and sexual offences": "ViolenceAndSexualOffences",
+    # This is present in older data but not in the latest list of categories, the name is self explanatory.
+    "Violent crime": "ViolenceAndSexualOffences",
+    # This is present in older data but not in the latest list of categories, the name is self explanatory.
+    "Public disorder and weapons": "PublicOrder",
 }
 
 
@@ -308,7 +325,12 @@ def write_street(
         pl.col("Location").cast(pl.String).alias("location"),
         pl.col("LSOA code").cast(pl.String).alias("lsoaCode"),
         pl.col("LSOA name").cast(pl.String).alias("lsoaName"),
-        pl.col("Crime type").cast(pl.Enum(CRIME_TYPES.keys())).alias("crimeType"),
+        pl.col("Crime type")
+        .replace_strict(
+            CRIME_TYPE_MAPPING,
+            return_dtype=pl.Enum(sorted(set(CRIME_TYPE_MAPPING.values()))),
+        )
+        .alias("crimeType"),
         pl.col("Last outcome category").cast(pl.String).alias("lastOutcomeCategory"),
         pl.col("Context").cast(pl.String).alias("context"),
     ]
