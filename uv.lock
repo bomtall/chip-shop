@@ -259,7 +259,6 @@ dependencies = [
     { name = "psutil" },
     { name = "python-dotenv" },
     { name = "requests" },
-    { name = "requests-mock" },
     { name = "tqdm" },
 ]
 
@@ -272,6 +271,7 @@ dev = [
 test = [
     { name = "pytest" },
     { name = "pytest-cov" },
+    { name = "requests-mock" },
 ]
 
 [package.metadata]
@@ -286,7 +286,6 @@ requires-dist = [
     { name = "psutil", specifier = ">=6.1.0" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "requests", specifier = ">=2.32.3" },
-    { name = "requests-mock", specifier = ">=1.12.1" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]
 
@@ -299,6 +298,7 @@ dev = [
 test = [
     { name = "pytest", specifier = ">=8.3.3" },
     { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "requests-mock", specifier = ">=1.12.1" },
 ]
 
 [[package]]

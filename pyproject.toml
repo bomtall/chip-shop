@@ -22,7 +22,6 @@ dependencies = [
     "polars>=1.14.0",
     "psutil>=6.1.0",
     "python-dotenv>=1.0.1",
-    "requests-mock>=1.12.1",
     "requests>=2.32.3",
     "tqdm>=4.67.1",
 ]
@@ -36,6 +35,7 @@ dev = [
 test = [
     "pytest-cov>=6.0.0",
     "pytest>=8.3.3",
+    "requests-mock>=1.12.1",
 ]
 
 [tool.uv]
