@@ -301,10 +301,8 @@ def write_street(
         pl.col("Crime ID").cast(pl.String).alias("idCrime"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("month"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("date"),
-        pl.col("Reported by").cast(pl.Enum(categories=FORCES)).alias("forceReportedBy"),
-        pl.col("Falls within")
-        .cast(pl.Enum(categories=FORCES))
-        .alias("forceFallsWithin"),
+        pl.col("Reported by").cast(pl.Enum(FORCES)).alias("forceReportedBy"),
+        pl.col("Falls within").cast(pl.Enum(FORCES)).alias("forceFallsWithin"),
         pl.col("Longitude").cast(pl.Float32).alias("longitude"),
         pl.col("Latitude").cast(pl.Float32).alias("latitude"),
         pl.col("Location").cast(pl.String).alias("location"),
