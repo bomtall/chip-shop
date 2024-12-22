@@ -197,9 +197,9 @@ def read(
     path_env: TypePathLike | None = None,
 ) -> pl.LazyFrame:
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
-    path_ = path(path_data=path_data, path_env=path_env)
-    logger.info(f"Reading {KEY} from {path_}")
-    return pl.scan_parquet(source=path_)
+    path_file = path(path_data=path_data, path_env=path_env)
+    logger.info(f"Reading {KEY} from {path_file}")
+    return pl.scan_parquet(source=path_file)
 
 
 def main():
