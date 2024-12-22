@@ -20,6 +20,9 @@ __all__ = [
     "KEY_RAW",
     "RAW_DOWNLOAD_INFO",
     "write_raw_all",
+    "write_street",
+    "write_street_all",
+    "read",
 ]
 
 
@@ -345,6 +348,19 @@ def write_street_all(
             path_data=path_data,
             path_env=path_env,
         )
+
+
+def read(
+    *,
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> pl.LazyFrame:
+    key = KEY
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
+    path_file = path(path_data=path_data, path_env=path_env)
+    logger.info(f"Reading {key=} from {path_file}")
+    return pl.scan_parquet(source=path_file)
 
 
 def main():
