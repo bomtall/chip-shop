@@ -138,7 +138,7 @@ def path(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> Path:
-    path_key = fryer.path.for_key(key=KEY, override=path_data, path_env=path_env)
+    path_key = fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
     if year is None:
         year = "*"
     else:
