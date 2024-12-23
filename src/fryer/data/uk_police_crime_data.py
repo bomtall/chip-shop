@@ -298,14 +298,13 @@ def write_street(
         date_start = None
         date_end = None
 
-    zip_file = ZipFile(
-        file=get_path_file_raw(
-            path_key=path_key_raw,
-            date_start=date_start,
-            date_end=date_end,
-            path_env=path_env,
-        )
+    path_raw = get_path_file_raw(
+        path_key=path_key_raw,
+        date_start=date_start,
+        date_end=date_end,
+        path_env=path_env,
     )
+    zip_file = ZipFile(file=path_raw)
     files_to_read = [
         file_name
         for file_name in zip_file.namelist()
@@ -335,8 +334,8 @@ def write_street(
         pl.col("Context").cast(pl.String).alias("context"),
     ]
 
-    datetime_derived = fryer.datetime.now()
-    additional_exprs = [pl.lit(datetime_derived).alias("datetimeDerived")]
+    datetime_download = pd.Timestamp.fromtimestamp(path_raw.stat().st_mtime)
+    additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
 
     df = pl.concat(
         [
