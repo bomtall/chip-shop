@@ -335,8 +335,8 @@ def write_street(
         pl.col("Context").cast(pl.String).alias("context"),
     ]
 
-    datetime_download = fryer.datetime.now()
-    additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
+    datetime_derived = fryer.datetime.now()
+    additional_exprs = [pl.lit(datetime_derived).alias("datetimeDerived")]
 
     df = pl.concat(
         [
