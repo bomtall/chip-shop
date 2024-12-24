@@ -19,22 +19,11 @@ __all__ = [
     "write_raw",
     "get_years",
     "write_raw_all",
-    "path_raw_dir",
 ]
 
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
-
-
-def path_raw_dir(
-    *,
-    path_data: TypePathLike | None = None,
-    path_env: TypePathLike | None = None,
-) -> Path:
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path = path_data / KEY_RAW
-    return path
 
 
 def write_raw(
@@ -52,16 +41,17 @@ def write_raw(
     key = KEY_RAW
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
-    path_dir = path_raw_dir(path_data=path_data, path_env=path_env)
-    path_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f"{path_dir=}, {path_data=}, {key=}")
+    path_key = fryer.path.for_key(
+        key=key, path_data=path_data, path_env=path_env, mkdir=True
+    )
+    logger.info(f"{path_key=}, {path_data=}, {key=}")
 
     year = fryer.datetime.validate_date(date=year)
     year_start = year.year - 1
     year_end = year.year
     logger.info(f"{year_start=}, {year_end=}, {year=}, {key=}")
 
-    path_file = path_dir / f"{year:{FORMAT_ISO_DATE}}_data.zip"
+    path_file = path_key / f"{year:{FORMAT_ISO_DATE}}_data.zip"
     logger.info(f"{path_file=} for {key=}")
 
     # TODO: figure out if we want to move this out of the function
@@ -126,7 +116,7 @@ def write_raw(
                 f"Did not read response correctly for {key=}, {url_meta=}, {response=}"
             )
 
-        path_file_meta = path_dir / f"{year:{FORMAT_ISO_DATE}}_meta.zip"
+        path_file_meta = path_key / f"{year:{FORMAT_ISO_DATE}}_meta.zip"
         logger.info(f"Dumping {key=} meta to {path_file_meta=}")
         path_file_meta.write_bytes(response.content)
     else:
