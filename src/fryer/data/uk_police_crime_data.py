@@ -22,7 +22,7 @@ __all__ = [
     "write_raw_all",
     "write_street",
     "write_street_all",
-    "read",
+    "read_street",
 ]
 
 
@@ -376,7 +376,7 @@ def write_street_all(
         )
 
 
-def read(
+def read_street(
     *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
