@@ -175,53 +175,53 @@ def path(
     return path_key / f"{month}.parquet"
 
 
-FORCES = (
-    "Avon and Somerset Constabulary",
-    "Bedfordshire Police",
-    "British Transport Police",
-    "Cambridgeshire Constabulary",
-    "Cheshire Constabulary",
-    "City of London Police",
-    "Cleveland Police",
-    "Cumbria Constabulary",
-    "Derbyshire Constabulary",
-    "Devon & Cornwall Police",
-    "Dorset Police",
-    "Durham Constabulary",
-    "Dyfed-Powys Police",
-    "Essex Police",
-    "Gloucestershire Constabulary",
-    "Greater Manchester Police",
-    "Gwent Police",
-    "Hampshire Constabulary",
-    "Hertfordshire Constabulary",
-    "Humberside Police",
-    "Kent Police",
-    "Lancashire Constabulary",
-    "Leicestershire Police",
-    "Lincolnshire Police",
-    "Merseyside Police",
-    "Metropolitan Police Service",
-    "Norfolk Constabulary",
-    "North Wales Police",
-    "North Yorkshire Police",
-    "Northamptonshire Police",
-    "Northumbria Police",
-    "Nottinghamshire Police",
-    "Police Service of Northern Ireland",
-    "South Wales Police",
-    "South Yorkshire Police",
-    "Staffordshire Police",
-    "Suffolk Constabulary",
-    "Surrey Police",
-    "Sussex Police",
-    "Thames Valley Police",
-    "Warwickshire Police",
-    "West Mercia Police",
-    "West Midlands Police",
-    "West Yorkshire Police",
-    "Wiltshire Police",
-)
+FORCE_MAPPING = {
+    "Avon and Somerset Constabulary": "AvonAndSomersetConstabulary",
+    "Bedfordshire Police": "BedfordshirePolice",
+    "British Transport Police": "BritishTransportPolice",
+    "Cambridgeshire Constabulary": "CambridgeshireConstabulary",
+    "Cheshire Constabulary": "CheshireConstabulary",
+    "City of London Police": "CityOfLondonPolice",
+    "Cleveland Police": "ClevelandPolice",
+    "Cumbria Constabulary": "CumbriaConstabulary",
+    "Derbyshire Constabulary": "DerbyshireConstabulary",
+    "Devon & Cornwall Police": "DevonAndCornwallPolice",
+    "Dorset Police": "DorsetPolice",
+    "Durham Constabulary": "DurhamConstabulary",
+    "Dyfed-Powys Police": "DyfedPowysPolice",
+    "Essex Police": "EssexPolice",
+    "Gloucestershire Constabulary": "GloucestershireConstabulary",
+    "Greater Manchester Police": "GreaterManchesterPolice",
+    "Gwent Police": "GwentPolice",
+    "Hampshire Constabulary": "HampshireConstabulary",
+    "Hertfordshire Constabulary": "HertfordshireConstabulary",
+    "Humberside Police": "HumbersidePolice",
+    "Kent Police": "KentPolice",
+    "Lancashire Constabulary": "LancashireConstabulary",
+    "Leicestershire Police": "LeicestershirePolice",
+    "Lincolnshire Police": "LincolnshirePolice",
+    "Merseyside Police": "MerseysidePolice",
+    "Metropolitan Police Service": "MetropolitanPoliceService",
+    "Norfolk Constabulary": "NorfolkConstabulary",
+    "North Wales Police": "NorthWalesPolice",
+    "North Yorkshire Police": "NorthYorkshirePolice",
+    "Northamptonshire Police": "NorthamptonshirePolice",
+    "Northumbria Police": "NorthumbriaPolice",
+    "Nottinghamshire Police": "NottinghamshirePolice",
+    "Police Service of Northern Ireland": "PoliceServiceOfNorthernIreland",
+    "South Wales Police": "SouthWalesPolice",
+    "South Yorkshire Police": "SouthYorkshirePolice",
+    "Staffordshire Police": "StaffordshirePolice",
+    "Suffolk Constabulary": "SuffolkConstabulary",
+    "Surrey Police": "SurreyPolice",
+    "Sussex Police": "SussexPolice",
+    "Thames Valley Police": "ThamesValleyPolice",
+    "Warwickshire Police": "WarwickshirePolice",
+    "West Mercia Police": "WestMerciaPolice",
+    "West Midlands Police": "WestMidlandsPolice",
+    "West Yorkshire Police": "WestYorkshirePolice",
+    "Wiltshire Police": "WiltshirePolice",
+}
 
 
 CRIME_TYPE_MAPPING = {
@@ -317,8 +317,18 @@ def write_street(
         pl.col("Crime ID").cast(pl.String).alias("idCrime"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("month"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("date"),
-        pl.col("Reported by").cast(pl.Enum(FORCES)).alias("forceReportedBy"),
-        pl.col("Falls within").cast(pl.Enum(FORCES)).alias("forceFallsWithin"),
+        pl.col("Reported by")
+        .replace_strict(
+            FORCE_MAPPING,
+            return_dtype=pl.Enum(FORCE_MAPPING.values()),
+        )
+        .alias("forceReportedBy"),
+        pl.col("Falls within")
+        .replace_strict(
+            FORCE_MAPPING,
+            return_dtype=pl.Enum(FORCE_MAPPING.values()),
+        )
+        .alias("forceFallsWithin"),
         pl.col("Longitude").cast(pl.Float32).alias("longitude"),
         pl.col("Latitude").cast(pl.Float32).alias("latitude"),
         pl.col("Location").cast(pl.String).alias("location"),
@@ -338,11 +348,8 @@ def write_street(
     additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
 
     df = pl.concat(
-        [
-            pl.read_csv(zip_file.read(file_to_read)).select(*exprs, *additional_exprs)
-            for file_to_read in tqdm(files_to_read)
-        ]
-    )
+        [pl.read_csv(zip_file.read(file_to_read)) for file_to_read in files_to_read]
+    ).select(*exprs, *additional_exprs)
     logger.info(f"""{df=
 }""")
 
