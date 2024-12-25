@@ -9,9 +9,10 @@ import socketserver
 from http import server
 from pathlib import Path
 
-import fryer.datetime
-import fryer.logger
 import fryer.path
+import fryer.logger
+import fryer.datetime
+from fryer.typing import TypePathLike
 
 # close port manually: fuser -k 12669/tcp
 
@@ -24,7 +25,7 @@ import fryer.path
 
 KEY = Path(__file__).stem
 PAGE = (Path(__file__).parent / "monitor.html").read_text()
-logger = fryer.logger.get(key=KEY)
+# logger = fryer.logger.get(key=KEY)
 shutdown_event = threading.Event()
 
 
@@ -74,10 +75,11 @@ def get_network_stats(network_interface: str):
     return mbps_in, mbps_out
 
 
-def system_monitoring_stats(network_interface: str) -> None:
+def system_monitoring_stats(network_interface: str, logger) -> None:
     """
     Get the system monitoring statistics and save to file in JSON format continuously.
     """
+    logger.info(f"Starting system monitoring stats {fryer.datetime.now()}")
     while True:
         data_dict = {}
         mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
@@ -98,9 +100,16 @@ def system_monitoring_stats(network_interface: str) -> None:
         (directory / "monitor.json").write_text(monitoring_json)
 
 
-def signal_handler(sig, frame):
+def signal_handler(
+    sig,
+    frame,
+    path_log: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> None:
+    logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     print("Shutting down the server...")
     subprocess.run("fuser -k 12669/tcp", shell=True)
+    logger.info("Shutting down the server...")
     # shutdown_event.set()
     # SERVER.shutdown()
     # SERVER.server_close()
@@ -144,8 +153,14 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-def main():
-    y = threading.Thread(target=system_monitoring_stats, daemon=True, args=("enp11s0",))
+def main(
+    path_log: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+):
+    logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
+    y = threading.Thread(
+        target=system_monitoring_stats, daemon=True, args=("enp11s0", logger)
+    )
     y.start()
 
     try:
@@ -153,6 +168,7 @@ def main():
         global SERVER
         SERVER = StreamingServer(address, StreamingHandler)
         print("Server started")
+        logger.info(f"Server started on port {address[1]}")
         signal.signal(signal.SIGINT, signal_handler)
         while not shutdown_event.is_set():
             SERVER.handle_request()
