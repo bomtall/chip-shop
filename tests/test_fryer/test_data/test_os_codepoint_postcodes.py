@@ -1,19 +1,23 @@
-import os
-
 import pytest
 
 import fryer.data
+import fryer.path
 
 
 @pytest.mark.integration
-def test_os_codepoint_download():
-    fryer.data.os_codepoint_postcodes.download()
-    assert [
-        x[0].split("/")[-1]
-        for x in os.walk(fryer.path.data() / "os_codepoint_postcodes_raw")
-    ] == [
-        "os_codepoint_postcodes_raw",
+def test_download_and_derive(temp_dir):
+    fryer.data.os_codepoint_postcodes.download(path_log=temp_dir, path_data=temp_dir)
+    assert {
+        path.stem
+        for path in fryer.path.for_key(
+            key=fryer.data.os_codepoint_postcodes.KEY_RAW, path_data=temp_dir
+        ).rglob("*")
+        if path.is_dir()
+    } == {
         "Doc",
         "Data",
         "CSV",
-    ]
+    }
+
+    df = fryer.data.os_codepoint_postcodes.derive(path_log=temp_dir, path_data=temp_dir)
+    assert not df.is_empty()
