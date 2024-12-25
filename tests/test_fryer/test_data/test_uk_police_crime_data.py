@@ -82,3 +82,10 @@ def test_write_street(month, temp_dir):
         path_data=temp_dir,
         path_data_raw=None,
     )
+
+
+@pytest.mark.integration
+def test_read_street():
+    df = fryer.data.uk_police_crime_data.read_street()
+    assert not df.head().collect().is_empty()
+    assert not df.tail().collect().is_empty()
