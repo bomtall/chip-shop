@@ -44,10 +44,10 @@ def download(
     validate_zipfile(BytesIO(response.content))
     zip_file = ZipFile(BytesIO(response.content))
 
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / key
-    path_file.parent.mkdir(parents=True, exist_ok=True)
-    zip_file.extractall(path_file)
+    path_key = fryer.path.for_key(
+        key=key, path_data=path_data, path_env=path_env, mkdir=True
+    )
+    zip_file.extractall(path_key)
 
 
 def validate_zipfile(bytes: BytesIO):
@@ -60,23 +60,23 @@ def derive(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY_RAW
-
-    headers = list(
-        pl.read_csv(path_file / "Doc/Code-Point_Open_Column_Headers.csv").row(0)
-    )
-    df = pl.read_csv(
-        path_file / "Data/CSV/*.csv", has_header=False, new_columns=headers
+    key = KEY_RAW
+    logger = fryer.logger.get(key=key, path_log=path_log)
+    path_key = fryer.path.for_key(key=key, path_data=path_data, path_env=path_env)
+    logger.info(
+        f"Deriving postcode data from {path_key=} and converting Eastings & Northings to Latitude & Longitude"
     )
 
-    gps = convert_lonlat(list(df["Eastings"]), list(df["Northings"]))
+    headers = pl.read_csv(path_key / "Doc" / "Code-Point_Open_Column_Headers.csv").row(
+        0
+    )
+    df = pl.read_csv(path_key / "Data/CSV/*.csv", has_header=False, new_columns=headers)
+
+    gps = convert_lonlat(df["Eastings"].to_list(), df["Northings"].to_list())
     df = df.with_columns(pl.Series("Longitude", gps[0]), pl.Series("Latitude", gps[1]))
 
-    logger = fryer.logger.get(key=KEY, path_log=path_log)
-    logger.info(
-        f"Derived postcode data {df.shape=} from {path_file=} converted Eastings & Northings to Latitude & Longitude"
-    )
+    logger.info(f"""{df=
+}""")
 
     return df
 
@@ -86,17 +86,18 @@ def write(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> None:
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / f"{KEY}.parquet"
+    key = KEY
+    logger = fryer.logger.get(key=key, path_log=path_log)
+    path_key = fryer.path.for_key(
+        key=key, path_data=path_data, path_env=path_env, mkdir=True
+    )
+    path_file = path_key / f"{key}.parquet"
     df = derive(
         path_log=path_log,
         path_data=path_data,
         path_env=path_env,
     )
-    path_file.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(path_file)
-
-    logger = fryer.logger.get(key=KEY, path_log=path_log)
     logger.info(f"Wrote postcode data to {path_file=}")
 
 
@@ -105,10 +106,11 @@ def read(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.LazyFrame:
-    path_data = fryer.path.data(override=path_data, path_env=path_env)
-    path_file = path_data / KEY / f"{KEY}.parquet"
-    logger = fryer.logger.get(key=KEY, path_log=path_log)
-    logger.info(f"Read postcode data from {path_file=}")
+    key = KEY
+    logger = fryer.logger.get(key=key, path_log=path_log)
+    path_key = fryer.path.for_key(key=key, path_data=path_data, path_env=path_env)
+    path_file = path_key / f"{key}.parquet"
+    logger.info(f"Reading postcode data from {path_file=}")
     return pl.scan_parquet(path_file)
 
 
