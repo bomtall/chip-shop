@@ -1,6 +1,8 @@
+import sys
 import json
 import time
 import psutil
+import signal
 import threading
 import subprocess
 import socketserver
@@ -23,6 +25,7 @@ import fryer.path
 KEY = Path(__file__).stem
 PAGE = (Path(__file__).parent / "monitor.html").read_text()
 logger = fryer.logger.get(key=KEY)
+shutdown_event = threading.Event()
 
 
 def get_cpu_core_temperatures() -> list[float]:
@@ -77,7 +80,6 @@ def system_monitoring_stats(network_interface: str) -> None:
     """
     while True:
         data_dict = {}
-        # graph_dict = {}
         mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
         cputemp = get_cpu_temperature()
         rampc = psutil.virtual_memory().percent
@@ -94,6 +96,15 @@ def system_monitoring_stats(network_interface: str) -> None:
         directory = fryer.path.data() / KEY
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "monitor.json").write_text(monitoring_json)
+
+
+def signal_handler(sig, frame):
+    print("Shutting down the server...")
+    subprocess.run("fuser -k 12669/tcp", shell=True)
+    # shutdown_event.set()
+    # SERVER.shutdown()
+    # SERVER.server_close()
+    sys.exit(0)
 
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
@@ -123,24 +134,6 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(content)
 
-        elif self.path == "/netstatsdata":
-            self.send_response(200)
-            self.send_header("Age", 0)
-            self.send_header("Cache-Control", "no-cache, private")
-            self.send_header("Pragma", "no-cache")
-            self.send_header(
-                "Content-Type", "multipart/x-mixed-replace; boundary=FRAME"
-            )  # ; boundary=FRAME
-            self.end_headers()
-            while True:
-                content = system_monitoring_stats("enp11s0").encode("utf-8")
-                self.wfile.write(b"--FRAME\r\n")
-                self.send_header("Content-Type", "multipart/x-mixed-replace")
-                self.send_header("Content-Length", len(content))
-                self.end_headers()
-                self.wfile.write(content)
-                self.wfile.write(b"\r\n")
-
         else:
             self.send_error(404)
             self.end_headers()
@@ -157,9 +150,12 @@ def main():
 
     try:
         address = ("", 12669)
-        server = StreamingServer(address, StreamingHandler)
+        global SERVER
+        SERVER = StreamingServer(address, StreamingHandler)
         print("Server started")
-        server.serve_forever()
+        signal.signal(signal.SIGINT, signal_handler)
+        while not shutdown_event.is_set():
+            SERVER.handle_request()
     finally:
         y.join()
 

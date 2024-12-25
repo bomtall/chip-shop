@@ -11,41 +11,36 @@ session = requests.Session()
 adapter = requests_mock.Adapter()
 session.mount("mock://", adapter)
 
-logger = fryer.logger.get(key=KEY)
+# logger = fryer.logger.get(key=KEY)
 
 adapter.register_uri("GET", "mock://test_success.com", text="success")
 adapter.register_uri("GET", "mock://test_fail.com", text="fail", status_code=404)
 
 
 @pytest.mark.parametrize(
-    "args,kwargs,expected",
+    "response,url,key,expected",
     [
         (
-            [
-                session.get("mock://test_success.com"),
-                "mock://test_success.com",
-                logger,
-                KEY,
-            ],
-            dict(),
+            session.get("mock://test_success.com"),
+            "mock://test_success.com",
+            KEY,
             True,
         ),
     ],
 )
-def test_success_requests_validate_response(args, kwargs, expected):
-    assert validate_response(*args, **kwargs) == expected
+def test_success_requests_validate_response(response, url, key, expected, temp_dir):
+    logger = fryer.logger.get(key=key, path_log=temp_dir)
+    assert (
+        validate_response(key=key, response=response, url=url, logger=logger)
+        == expected
+    )
 
 
 @pytest.mark.parametrize(
-    "args,kwargs,expected",
-    [
-        (
-            [session.get("mock://test_fail.com"), "mock://test_fail.com", logger, KEY],
-            dict(),
-            ValueError,
-        ),
-    ],
+    "response,url,key,expected",
+    [(session.get("mock://test_fail.com"), "mock://test_fail.com", KEY, ValueError)],
 )
-def test_error_requests_validate_response(args, kwargs, expected):
+def test_error_requests_validate_response(response, url, key, expected, temp_dir):
+    logger = fryer.logger.get(key=key, path_log=temp_dir)
     with pytest.raises(expected):
-        validate_response(*args, **kwargs)
+        validate_response(key=key, response=response, url=url, logger=logger)
