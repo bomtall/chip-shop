@@ -25,7 +25,7 @@ adapter.register_uri("GET", "mock://test_fail.com", text="fail", status_code=404
             session.get("mock://test_success.com"),
             "mock://test_success.com",
             KEY,
-            True,
+            None,
         ),
     ],
 )
