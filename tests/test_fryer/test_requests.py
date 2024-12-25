@@ -1,17 +1,18 @@
 from pathlib import Path
+
 import pytest
 import requests
 import requests_mock
+
 from fryer.requests import validate_response
 import fryer.logger
+
 
 KEY = Path(__file__).stem
 
 session = requests.Session()
 adapter = requests_mock.Adapter()
 session.mount("mock://", adapter)
-
-# logger = fryer.logger.get(key=KEY)
 
 adapter.register_uri("GET", "mock://test_success.com", text="success")
 adapter.register_uri("GET", "mock://test_fail.com", text="fail", status_code=404)
