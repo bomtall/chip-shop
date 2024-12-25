@@ -24,9 +24,6 @@ from fryer.typing import TypePathLike
 # docker0 - Docker interface: Docker network connection.
 
 KEY = Path(__file__).stem
-PAGE = (Path(__file__).parent / "monitor.html").read_text()
-# logger = fryer.logger.get(key=KEY)
-shutdown_event = threading.Event()
 
 
 def get_cpu_core_temperatures() -> list[float]:
@@ -53,7 +50,7 @@ def get_cpu_temperature() -> float:
     return sum(temps) / len(temps)
 
 
-def get_bytes_io(network_interface: str):
+def get_bytes_io(network_interface: str) -> tuple[int, int]:
     """
     Get the number of bytes received and sent on a network interface.
     """
@@ -110,9 +107,6 @@ def signal_handler(
     print("Shutting down the server...")
     subprocess.run("fuser -k 12669/tcp", shell=True)
     logger.info("Shutting down the server...")
-    # shutdown_event.set()
-    # SERVER.shutdown()
-    # SERVER.server_close()
     sys.exit(0)
 
 
@@ -136,7 +130,8 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             self.wfile.write(content)
 
         elif self.path == "/index.html":
-            content = PAGE.encode("utf-8")
+            page = (Path(__file__).parent / "monitor.html").read_text()
+            content = page.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
             self.send_header("Content-Length", len(content))
@@ -162,6 +157,7 @@ def main(
         target=system_monitoring_stats, daemon=True, args=("enp11s0", logger)
     )
     y.start()
+    shutdown_event = threading.Event()
 
     try:
         address = ("", 12669)
