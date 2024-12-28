@@ -34,7 +34,7 @@ def download(
     Primary source of information is: https://osdatahub.os.uk/downloads/open/CodePointOpen
     """
     key = KEY_RAW
-    logger = fryer.logger.get(key=key, path_log=path_log)
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     url = "https://api.os.uk/downloads/v1/products/CodePointOpen/downloads?area=GB&format=CSV&redirect"
 
@@ -61,7 +61,7 @@ def derive(
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
     key = KEY_RAW
-    logger = fryer.logger.get(key=key, path_log=path_log)
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(key=key, path_data=path_data, path_env=path_env)
     logger.info(
         f"Deriving postcode data from {path_key=} and converting Eastings & Northings to Latitude & Longitude"
@@ -87,7 +87,7 @@ def write(
     path_env: TypePathLike | None = None,
 ) -> None:
     key = KEY
-    logger = fryer.logger.get(key=key, path_log=path_log)
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(
         key=key, path_data=path_data, path_env=path_env, mkdir=True
     )
@@ -107,7 +107,7 @@ def read(
     path_env: TypePathLike | None = None,
 ) -> pl.LazyFrame:
     key = KEY
-    logger = fryer.logger.get(key=key, path_log=path_log)
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(key=key, path_data=path_data, path_env=path_env)
     path_file = path_key / f"{key}.parquet"
     logger.info(f"Reading postcode data from {path_file=}")
