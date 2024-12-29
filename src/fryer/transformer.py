@@ -2,9 +2,28 @@ import polars as pl
 from typing import Callable, List, Dict, Optional
 
 
-def process_date(df, date_column, format):
-    result = df.with_columns(pl.col(date_column).str.to_date(format, strict=False))
-    return result
+def process_date(df, date_column, format) -> pl.Expr:
+    return pl.col(date_column).str.to_date(format, strict=False)
+
+
+def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr:
+    """
+    Get the column mapping for a given field name from the dataset guide and return polars expression.
+    """
+
+    col_map = dict(
+        df.filter(pl.col("field name") == field_name)
+        .select("code/format", "label")
+        .iter_rows()
+    )
+
+    if remove_minus_one and "-1" in col_map:
+        col_map.pop("-1")  # remove missing values from enum
+    print(field_name)
+    print(col_map)
+    return pl.col(field_name).replace_strict(
+        col_map, return_dtype=pl.Enum(list(set(col_map.values()))), default=None
+    )
 
 
 def process_data(
@@ -16,6 +35,8 @@ def process_data(
     column_names: Optional[Dict[str, str]] = None,
     column_operations: Optional[Dict[str, pl.Expr]] = None,
     df_operations: Optional[List[Callable]] = None,
+    enum_column_maps: Optional[pl.DataFrame] = None,
+    remove_minus_one: bool = False,
 ) -> pl.DataFrame:
     """
     General function to load data, apply schema, type transformations, and operations.
@@ -36,7 +57,7 @@ def process_data(
     # Load the data based on the file type or iterable
     if file_path:
         if file_type == "csv":
-            df = pl.read_csv(file_path)
+            df = pl.read_csv(file_path, infer_schema_length=0)
         elif file_type == "parquet":
             df = pl.read_parquet(file_path)
     elif data:
@@ -45,12 +66,13 @@ def process_data(
         raise ValueError(f"Unsupported file type: {file_type}")
 
     # Apply schema transformations (if provided)
+    exprs = []
     if schema:
         for col, dtype in schema.items():
             if dtype == pl.Date:
-                df = process_date(df, col, date_formats[col])
+                exprs.append(process_date(df, col, date_formats[col]))
             elif dtype in [pl.Categorical, pl.String]:
-                df = df.with_columns(
+                exprs.append(
                     pl.col(col)
                     .replace(
                         old=["null", "NULL", "NONE", "None", "nan", "NaN", ""],
@@ -58,9 +80,17 @@ def process_data(
                     )
                     .cast(dtype, strict=False)
                 )
-            else:
-                df = df.with_columns(pl.col(col).cast(dtype, strict=False))
+            elif dtype == pl.Enum:
+                exprs.append(
+                    get_column_map_expression(
+                        enum_column_maps, col, remove_minus_one=remove_minus_one
+                    )
+                )
 
+            else:
+                exprs.append(pl.col(col).cast(dtype, strict=False))
+
+        df = df.with_columns(*exprs)
     # Apply columnar transformations (if provided)
     if column_operations:
         if all([isinstance(x, pl.Expr) for x in column_operations.values()]):

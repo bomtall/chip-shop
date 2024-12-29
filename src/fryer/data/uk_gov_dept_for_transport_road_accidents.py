@@ -9,6 +9,7 @@ import fryer.logger
 import fryer.path
 import fryer.requests
 from fryer.typing import TypePathLike
+import fryer.transformer
 
 guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"
@@ -18,6 +19,12 @@ __all__ = ["KEY", "download", "derive", "read"]
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
+
+date_formats = {
+    "vehicle": {},
+    "collision": {"date": "%d/%m/%Y"},
+    "casualty": {},
+}
 
 schemas = {
     "vehicle": {},
@@ -101,22 +108,16 @@ def download(
     path_file.write_bytes(response.content)
 
 
-def derive(
+def load_data_guide(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ):
-    key_read = KEY_RAW
-    key_write = KEY
+    mapping = {"enhanced_collision_severity": "accident_severity"}
 
-    mapping = {
-        # "first_road_class": "1st_road_class",
-        "enhanced_collision_severity": "accident_severity"
-    }
-
-    dataset_guide_df = (
+    return (
         pl.read_excel(
-            fryer.path.for_key(key=key_read, path_data=path_data)
+            fryer.path.for_key(key=KEY_RAW, path_data=path_data)
             / "dft-road-safety-open-dataset-guide-2024.xlsx"
         )
         .filter(
@@ -140,79 +141,23 @@ def derive(
             )
         )
     )
-    print(dataset_guide_df.shape)
-    for path in fryer.path.for_key(
-        key=key_read, path_data=path_data, path_env=path_env
-    ).rglob("*.csv"):
-        if path.stem == "dft-road-safety-open-dataset-guide-2024":
-            continue
-
-        dataset = path.stem.split("-")[0]
-        info_df = dataset_guide_df.filter(pl.col("table") == dataset)
-
-        cols_to_map = {
-            "collision": [
-                "police_force",
-                "accident_severity",
-                "day_of_week",
-                "local_authority_district",
-                "local_authority_highway",
-                "first_road_class",
-                "road_type",
-                "junction_detail",
-                "junction_control",
-                "second_road_class",
-                "pedestrian_crossing_human_control",
-                "pedestrian_crossing_physical_facilities",
-                "light_conditions",
-                "weather_conditions",
-                "road_surface_conditions",
-                "special_conditions_at_site",
-                "carriageway_hazards",
-                "urban_or_rural_area",
-                "did_police_officer_attend_scene_of_accident",
-            ],
-            "casualty": ["casualty_type"],
-            "vehicle": ["vehicle_type"],
-        }
-
-        # TODO: if create function to combine applying schema and creating column map to produce schema application as expressions
-        exprs = [
-            get_column_map_expression(info_df, col) for col in cols_to_map[dataset]
-        ]
-        for x in exprs:
-            print(x)
-
-        path_write = fryer.path.for_key(
-            key=key_write, path_data=path_data, path_env=path_env, mkdir=True
-        )
-        df = pl.read_csv(path, infer_schema_length=0).with_columns(*exprs)
-        if dataset == "collision":
-            schema = schemas["collision"]
-        else:
-            schema = None
-        if schema:
-            for col, dtype in schema.items():
-                print(col, dtype)
-                if dtype == pl.Date:
-                    df = process_date(df, col, "dd/mm/yy")  # date_formats[col])
-                elif dtype in [pl.Categorical, pl.String]:
-                    df = df.with_columns(
-                        pl.col(col)
-                        .replace(
-                            old=["null", "NULL", "NONE", "None", "nan", "NaN", ""],
-                            new=[None] * 7,
-                        )
-                        .cast(dtype, strict=False)
-                    )
-                elif dtype == pl.Enum:
-                    continue
-                else:
-                    df = df.with_columns(pl.col(col).cast(dtype, strict=False))
-        df.write_parquet(path_write / f"{dataset}.parquet")
 
 
-def get_column_map_expression(df, field_name) -> pl.Expr:
+def load_datasets(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> dict[str, Path]:
+    return {
+        path.stem.split("-")[0]: path
+        for path in fryer.path.for_key(
+            key=KEY_RAW, path_data=path_data, path_env=path_env
+        ).rglob("*.csv")
+        if path.stem != "dft-road-safety-open-dataset-guide-2024"
+    }
+
+
+def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr:
     """
     Get the column mapping for a given field name from the dataset guide and return polars expression.
     """
@@ -223,7 +168,7 @@ def get_column_map_expression(df, field_name) -> pl.Expr:
         .iter_rows()
     )
 
-    if "-1" in col_map:
+    if remove_minus_one and "-1" in col_map:
         col_map.pop("-1")  # remove missing values from enum
     print(field_name)
     print(col_map)
@@ -244,6 +189,34 @@ def read(
         ).rglob("*.parquet")
     ]
     return df_list
+
+
+def derive(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+):
+    enum_mapping = load_data_guide(path_data=path_data, path_env=path_env)
+    datasets = load_datasets(path_data=path_data, path_env=path_env)
+
+    for dataset, path in datasets.items():
+        if dataset == "collision":
+            info_df = enum_mapping.filter(pl.col("table") == dataset)
+            df = fryer.transformer.process_data(
+                file_path=path,
+                file_type="csv",
+                schema=schemas[dataset],
+                column_operations=None,
+                df_operations=None,
+                remove_minus_one=True,
+                enum_column_maps=info_df,
+                date_formats={"date": "%d/%m/%Y"},
+            )
+            print(df.columns, df.dtypes)
+            df.write_parquet(
+                fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
+                / f"{dataset}.parquet"
+            )
 
 
 def main():
