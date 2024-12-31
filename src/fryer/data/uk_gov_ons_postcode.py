@@ -37,6 +37,59 @@ def path(
     return path_key / f"{date_download}_{today:{FORMAT_ISO_DATE}}.parquet"
 
 
+def get_county_map(
+    zip_file: ZipFile,
+) -> dict[str, str]:
+    filenames = [
+        name
+        for name in zip_file.namelist()
+        if "County names and codes UK as at " in name and name.endswith(".csv")
+    ]
+    if len(filenames) != 1:
+        raise ValueError(f"{len(filenames)=} has to be one {filenames=}")
+    return {
+        **dict(pl.read_csv(zip_file.read(filenames[0]), columns=[0, 1]).iter_rows()),
+        "": "Unknown County",
+    }
+
+
+def get_county_electoral_division_map(
+    zip_file: ZipFile,
+    df_raw: pl.DataFrame,
+) -> dict[str, str]:
+    filenames_county = [
+        name
+        for name in zip_file.namelist()
+        if "County Electoral Division names and codes EN as at " in name
+        and name.endswith(".csv")
+    ]
+    if len(filenames_county) != 1:
+        raise ValueError(f"{len(filenames_county)=} has to be one {filenames_county=}")
+    map_original = {
+        **dict(
+            pl.read_csv(zip_file.read(filenames_county[0]), columns=[0, 1]).iter_rows()
+        ),
+        # We only have mapping for England, therefore, we add pseudo names as we do in county
+        "E99999999": "(pseudo) England (UA/MD/LB)",
+        "L99999999": "(pseudo) Channel Islands",
+        "M99999999": "(pseudo) Isle of Man",
+        "N99999999": "(pseudo) Northern Ireland",
+        "S99999999": "(pseudo) Scotland",
+        "W99999999": "(pseudo) Wales",
+        "": "Unkown County Electoral Division",
+    }
+    return {
+        **map_original,
+        # We have to do this because there are many codes which are not in the file which we use to read in the data
+        **{
+            remaining_key: map_original[""]
+            for remaining_key in df_raw.filter(
+                ~pl.col("ced").is_in(map_original.keys())
+            )["ced"].unique()
+        },
+    }
+
+
 def write(
     *,
     path_log: TypePathLike | None = None,
@@ -71,10 +124,18 @@ def write(
     zip_file = ZipFile(BytesIO(response.content))
 
     date_download = fryer.datetime.validate_date(DATE_DOWNLOAD)
-    df = pl.read_csv(
+
+    df_raw = pl.read_csv(
         zip_file.read(f"Data/ONSPD_{date_download:%^b}_{date_download:%Y}_UK.csv"),
         infer_schema_length=10_000,
-    ).select(
+    )
+
+    county_map = get_county_map(zip_file=zip_file)
+    county_electoral_division_map = get_county_electoral_division_map(
+        zip_file=zip_file, df_raw=df_raw
+    )
+
+    df = df_raw.select(
         # Postcode in 7 character version
         pl.col("pcd").alias("postcode"),
         # Postcode in 8 character version (second part right aligned)
@@ -92,11 +153,27 @@ def write(
         # The current county to which the postcode has been assigned.
         # Pseudo codes are included for English UAs, Wales, Scotland, Northern Ireland, Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
-        pl.col("oscty").alias("county_code"),
+        pl.col("oscty").cast(pl.Enum(county_map.keys())).alias("county_code"),
+        pl.col("oscty")
+        .replace_strict(county_map, return_dtype=pl.Enum(county_map.values()))
+        .alias("county_name"),
         # The county electoral division code for each English postcode.
         # Pseudo codes are included for the remainder of the UK.
         # The field will be blank for English postcodes with no grid reference
-        pl.col("ced").alias("county_eletoral_division_code"),
+        pl.col("ced")
+        .cast(pl.Enum(county_electoral_division_map.keys()))
+        .alias("county_electoral_division_code"),
+        (
+            pl.col("ced")
+            # Duplicates in the names
+            .replace_strict(
+                county_electoral_division_map,
+                return_dtype=pl.Enum(
+                    sorted(set(county_electoral_division_map.values()))
+                ),
+            )
+            .alias("county_electoral_division_name")
+        ),
         # The current LAD (local authority district) / UA (unitary authority) to which the postcode has been assigned.
         # Pseudo codes are included for Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference
@@ -108,20 +185,22 @@ def write(
         # The parish (also known as 'civil parish') or unparished area code in England or community code in Wales.
         # Pseudo codes are included for Scotland, Northern Ireland, Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
-        pl.col("parish").alias("paris_code"),
+        pl.col("parish").alias("parish_code"),
         # Shows whether the postcode is a small or large user.
-        pl.col("usertype")
-        .replace_strict(
-            (postcode_user_type_map := {0: "small_user", 1: "large_user"}),
-            return_dtype=pl.Enum(postcode_user_type_map.values()),
-        )
-        .alias("postcode_user_type"),
+        (
+            pl.col("usertype")
+            .replace_strict(
+                (postcode_user_type_map := {0: "small_user", 1: "large_user"}),
+                return_dtype=pl.Enum(postcode_user_type_map.values()),
+            )
+            .alias("postcode_user_type")
+        ),
         # The OS grid reference Easting to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
         # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
-        pl.col("oseast1m").alias("easting"),
+        pl.col("oseast1m").replace("", None).cast(pl.Int32).alias("easting"),
         # The OS grid reference Northing to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
         # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
-        pl.col("osnrth1m").alias("northing"),
+        pl.col("osnrth1m").replace("", None).cast(pl.Int32).alias("northing"),
     )
 
     df.write_parquet(path_file)
