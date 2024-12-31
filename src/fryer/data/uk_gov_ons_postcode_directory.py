@@ -512,7 +512,7 @@ def write(
             .cast(pl.Enum(map_primary_care_trust.keys()))
             .alias("primary_care_trust_code")
         ),
-        # The national LAU1-equivalent code for each postcode.
+        # International territorial level. The national LAU1-equivalent code for each postcode.
         # Pseudo codes are included for Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
         (
