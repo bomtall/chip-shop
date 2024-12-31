@@ -27,7 +27,41 @@ date_formats = {
 }
 
 schemas = {
-    "vehicle": {},
+    "vehicle": {
+        "accident_index": pl.String,
+        "accident_year": pl.Int32,
+        "accident_reference": pl.Int32,
+        "vehicle_type": pl.Enum,
+        "towing_and_articulation": pl.Enum,
+        "vehicle_manoeuvre": pl.Enum,
+        "vehicle_direction_from": pl.Enum,
+        "vehicle_direction_to": pl.Enum,
+        "vehicle_location_restricted_lane": pl.Enum,
+        "junction_location": pl.Enum,
+        "skidding_and_overturning": pl.Enum,
+        "hit_object_in_carriageway": pl.Enum,
+        "vehicle_leaving_carriageway": pl.Enum,
+        "hit_object_off_carriageway": pl.Enum,
+        "first_point_of_impact": pl.Enum,
+        "vehicle_left_hand_drive": pl.Enum,
+        "journey_purpose_of_driver": pl.Enum,
+        "sex_of_driver": pl.Enum,
+        "age_of_driver": pl.Int32,
+        "age_band_of_driver": pl.Enum,
+        "engine_capacity_cc": pl.Int32,
+        "propulsion_code": pl.Enum,
+        "age_of_vehicle": pl.Int32,
+        "generic_make_model": pl.String,
+        "driver_imd_decile": pl.Int32,
+        "driver_home_area_type": pl.Enum,
+        "lsoa_of_driver": pl.String,
+        "escooter_flag": pl.Int32,  # change to boolean but error currently
+        "dir_from_e": pl.String,
+        "dir_from_n": pl.String,
+        "dir_to_e": pl.String,
+        "dir_to_n": pl.String,
+        "driver_distance_banding": pl.Enum,
+    },
     "collision": {
         "accident_index": pl.String,
         "accident_year": pl.Int32,
@@ -63,11 +97,41 @@ schemas = {
         "carriageway_hazards": pl.Enum,
         "urban_or_rural_area": pl.Enum,
         "did_police_officer_attend_scene_of_accident": pl.Enum,
-        "trunk_road_flag": pl.String,  # change to boolean
+        "trunk_road_flag": pl.String,  # change to boolean but error currently
         "lsoa_of_accident_location": pl.String,
+        "enhanced_severity_collision": pl.Enum,
     },
-    "casualty": {},
+    "casualty": {
+        "accident_index": pl.String,
+        "accident_year": pl.Int32,
+        "accident_reference": pl.String,
+        "vehicle_reference": pl.Int32,
+        "casualty_reference": pl.Int32,
+        "casualty_class": pl.Enum,
+        "sex_of_casualty": pl.Enum,
+        "age_of_casualty": pl.Int32,
+        "age_band_of_casualty": pl.Enum,
+        "casualty_severity": pl.Enum,
+        "pedestrian_location": pl.Enum,
+        "pedestrian_movement": pl.Enum,
+        "car_passenger": pl.Enum,
+        "bus_or_coach_passenger": pl.Enum,
+        "pedestrian_road_maintenance_worker": pl.Enum,
+        "casualty_type": pl.Enum,
+        "casualty_home_area_type": pl.Enum,
+        "casualty_imd_decile": pl.Enum,
+        "lsoa_of_casualty": pl.String,
+        "enhanced_casualty_severity": pl.Enum,
+        "casualty_distance_banding": pl.Enum,
+    },
 }
+
+
+def create_column_rename_dict(schema) -> dict:
+    column_names = {}
+    for key in schema.keys():
+        column_names[key] = key.replace("_", " ").title()
+    return column_names
 
 
 def process_date(df, date_column, format):
@@ -113,33 +177,33 @@ def load_data_guide(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ):
-    mapping = {"enhanced_collision_severity": "accident_severity"}
+    # mapping = {"enhanced_collision_severity": "accident_severity"}
 
     return (
         pl.read_excel(
             fryer.path.for_key(key=KEY_RAW, path_data=path_data)
             / "dft-road-safety-open-dataset-guide-2024.xlsx"
         )
-        .filter(
-            ~pl.col("field name").is_in(
-                ["legacy_collision_severity", "accident_severity"]
-            )
-        )
+        # .filter(
+        #     ~pl.col("field name").is_in(
+        #         ["legacy_collision_severity", "accident_severity"]
+        #     )
+        # )
         .with_columns(
             pl.col("table").str.replace("accident", "collision"),
-            pl.col("field name").str.replace_many(mapping),
+            #     pl.col("field name").str.replace_many(mapping),
         )
-        .extend(
-            pl.DataFrame(
-                {
-                    "table": ["collision"],
-                    "field name": ["accident_severity"],
-                    "code/format": ["2"],
-                    "label": ["Serious"],
-                    "note": ["legacy_collision_severity"],
-                }
-            )
-        )
+        # .extend(
+        #     pl.DataFrame(
+        #         {
+        #             "table": ["collision"],
+        #             "field name": ["accident_severity"],
+        #             "code/format": ["2"],
+        #             "label": ["Serious"],
+        #             "note": ["legacy_collision_severity"],
+        #         }
+        #     )
+        # )
     )
 
 
@@ -157,37 +221,17 @@ def load_datasets(
     }
 
 
-def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr:
-    """
-    Get the column mapping for a given field name from the dataset guide and return polars expression.
-    """
-
-    col_map = dict(
-        df.filter(pl.col("field name") == field_name)
-        .select("code/format", "label")
-        .iter_rows()
-    )
-
-    if remove_minus_one and "-1" in col_map:
-        col_map.pop("-1")  # remove missing values from enum
-    print(field_name)
-    print(col_map)
-    return pl.col(field_name).replace_strict(
-        col_map, return_dtype=pl.Enum(list(set(col_map.values()))), default=None
-    )
-
-
 def read(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-) -> pl.DataFrame:
-    df_list = [
-        pl.read_parquet(path)
+) -> dict[str, pl.DataFrame]:
+    df_list = {
+        path.stem: pl.read_parquet(path)
         for path in fryer.path.for_key(
             key=KEY, path_data=path_data, path_env=path_env
         ).rglob("*.parquet")
-    ]
+    }
     return df_list
 
 
@@ -200,27 +244,27 @@ def derive(
     datasets = load_datasets(path_data=path_data, path_env=path_env)
 
     for dataset, path in datasets.items():
-        if dataset == "collision":
-            info_df = enum_mapping.filter(pl.col("table") == dataset)
-            df = fryer.transformer.process_data(
-                file_path=path,
-                file_type="csv",
-                schema=schemas[dataset],
-                column_operations=None,
-                df_operations=None,
-                remove_minus_one=True,
-                enum_column_maps=info_df,
-                date_formats={"date": "%d/%m/%Y"},
-            )
-            print(df.columns, df.dtypes)
-            df.write_parquet(
-                fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
-                / f"{dataset}.parquet"
-            )
+        info_df = enum_mapping.filter(pl.col("table") == dataset)
+        df = fryer.transformer.process_data(
+            file_path=path,
+            file_type="csv",
+            schema=schemas[dataset],
+            column_operations=None,
+            df_operations=None,
+            remove_minus_one=True,
+            enum_column_maps=info_df,
+            date_formats={"date": "%d/%m/%Y"},
+            column_names=create_column_rename_dict(schemas[dataset]),
+        )
+        print(df.columns, df.dtypes)
+        df.write_parquet(
+            fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
+            / f"{dataset}.parquet"
+        )
 
 
 def main():
-    # download()
+    download()
     derive()
 
 

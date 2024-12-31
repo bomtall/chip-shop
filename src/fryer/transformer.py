@@ -75,8 +75,8 @@ def process_data(
                 exprs.append(
                     pl.col(col)
                     .replace(
-                        old=["null", "NULL", "NONE", "None", "nan", "NaN", ""],
-                        new=[None] * 7,
+                        old=["null", "NULL", "NONE", "None", "nan", "NaN", "", "-1"],
+                        new=[None],
                     )
                     .cast(dtype, strict=False)
                 )
@@ -91,6 +91,7 @@ def process_data(
                 exprs.append(pl.col(col).cast(dtype, strict=False))
 
         df = df.with_columns(*exprs)
+
     # Apply columnar transformations (if provided)
     if column_operations:
         if all([isinstance(x, pl.Expr) for x in column_operations.values()]):
