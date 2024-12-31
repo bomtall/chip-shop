@@ -35,6 +35,19 @@ def download(
 ) -> pl.DataFrame:
     """
     Primary source of information is https://www.gov.uk/guidance/about-the-price-paid-data
+
+    Our Price Paid Data excludes:
+        - sales that have not been lodged with HM Land Registry
+        - sales that were not for value
+        - transfers, conveyances, assignments or leases at a premium with nominal rent, which are:
+            - "Right to buy" sales at a discount
+            - subject to an existing mortgage
+            - to effect the sale of a share in a property, for example, a transfer between parties on divorce
+            - by way of a gift
+            - under a compulsory purchase order
+            - under a court order
+            - to Trustees appointed under Deed of appointment
+        - Vesting Deeds Transmissions or Assents of more than one property
     """
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
 
@@ -48,63 +61,75 @@ def download(
     datetime_download = fryer.datetime.now()
 
     exprs = [
-        pl.col("idTransaction").cast(pl.String),
+        pl.col("id_transaction").cast(pl.String),
         pl.col("price").cast(pl.Float64),
         pl.col("date").str.to_date(format="%Y-%m-%d %H:%M"),
         pl.col("postcode").cast(pl.String),
         (
-            pl.col("propertyType").replace_strict(
+            pl.col("property_type").replace_strict(
                 property_type_map := {
-                    "D": "Detached",
-                    "S": "SemiDetached",
-                    "T": "Terraced",
-                    "F": "FlatsOrMaisonettes",
-                    "O": "Other",
+                    "D": "detached",
+                    "S": "semi_detached",
+                    # end-of-terrace properties are included in the Terraced category above
+                    "T": "terraced",
+                    "F": "flats_or_maisonettes",
+                    # A new "other" property type has been added to the dataset, which identifies non-residential properties.
+                    # "Other" is only valid where the transaction relates to a property type that is not covered by existing values, for example where a property comprises more than one large parcel of land.
+                    "O": "other",
                 },
                 return_dtype=pl.Enum(property_type_map.values()),
             )
         ),
         (
-            pl.col("oldOrNew").replace_strict(
-                old_new_map := {"Y": "New", "N": "Old"},
+            pl.col("old_new").replace_strict(
+                old_new_map := {"Y": "new", "N": "old"},
                 return_dtype=pl.Enum(old_new_map.values()),
             )
         ),
         (
-            pl.col("tenureDuration").replace_strict(
+            pl.col("tenure_duration").replace_strict(
                 tenure_duration_map := {
-                    "F": "Freehold",
-                    "L": "Leasehold",
-                    "U": "Unknown",
+                    "F": "freehold",
+                    "L": "leasehold",
+                    "U": "unknown",
                 },
                 return_dtype=pl.Enum(tenure_duration_map.values()),
             )
         ),
-        pl.col("primaryAddressableObjectName").cast(pl.String),
-        pl.col("secondaryAddressableObjectName").cast(pl.String),
+        # Typically the house number or name.
+        pl.col("primary_addressable_object_name").cast(pl.String),
+        # Where a property has been divided into separate units (for example, flats), the PAON (above) will identify the building and a SAON will be specified that identifies the separate unit/flat.
+        pl.col("secondary_addressable_object_name").cast(pl.String),
         pl.col("street").cast(pl.String),
         pl.col("locality").cast(pl.String),
-        pl.col("townCity").cast(pl.String),
+        pl.col("town_city").cast(pl.String),
         pl.col("district").cast(pl.String),
         pl.col("county").cast(pl.String),
         (
-            pl.col("ppdCategoryType").replace_strict(
-                ppd_category_type_map := {
-                    "A": "StandardPricePaidEntry",
-                    "B": "AdditionalPricePaidEntry",
+            pl.col("transaction_type").replace_strict(
+                transaction_type_map := {
+                    "A": "standard_price_paid_entry",
+                    # Additional Price Paid entry includes:
+                    #  - transfers under a power of sale (repossessions)
+                    #  - buy-to-lets where they can be identified by a mortgage
+                    #  - transfers to non-private individuals
+                    #  - sales where the property type is classed as "Other"
+                    # Data available from 14 October 2013.
+                    # Please note category B does not separately identify the transaction types stated.
+                    "B": "additional_price_paid_entry",
                 },
-                return_dtype=pl.Enum(ppd_category_type_map.values()),
+                return_dtype=pl.Enum(transaction_type_map.values()),
             )
         ),
         (
-            pl.col("recordStatusMonthlyFileOnly").replace_strict(
-                record_status_map := {"A": "Addition", "C": "Change", "D": "Delete"},
+            pl.col("record_status_monthly_file_only").replace_strict(
+                record_status_map := {"A": "addition", "C": "change", "D": "delete"},
                 return_dtype=pl.Enum(record_status_map.values()),
             )
         ),
     ]
     columns = [expr.meta.output_name() for expr in exprs]
-    additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
+    additional_exprs = [pl.lit(datetime_download).alias("datetime_download")]
 
     logger.info(f"Reading for {KEY} at {url=}")
     response = requests.get(url)
