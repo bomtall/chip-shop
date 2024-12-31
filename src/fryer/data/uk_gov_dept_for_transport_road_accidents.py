@@ -22,7 +22,10 @@ KEY_RAW = KEY + "_raw"
 
 date_formats = {
     "vehicle": {},
-    "collision": {"date": "%d/%m/%Y"},
+    "collision": {
+        "date": "%d/%m/%Y",
+        "time": "%H:%M",
+    },
     "casualty": {},
 }
 
@@ -55,7 +58,7 @@ schemas = {
         "driver_imd_decile": pl.Int32,
         "driver_home_area_type": pl.Enum,
         "lsoa_of_driver": pl.String,
-        "escooter_flag": pl.Int32,  # change to boolean but error currently
+        "escooter_flag": pl.Boolean,
         "dir_from_e": pl.String,
         "dir_from_n": pl.String,
         "dir_to_e": pl.String,
@@ -81,13 +84,13 @@ schemas = {
         "local_authority_ons_district": pl.String,
         "local_authority_highway": pl.Enum,
         "first_road_class": pl.Enum,
-        "first_road_number": pl.String,
+        "first_road_number": pl.Int32,
         "road_type": pl.Enum,
         "speed_limit": pl.Int32,
         "junction_detail": pl.Enum,
         "junction_control": pl.Enum,
         "second_road_class": pl.Enum,
-        "second_road_number": pl.String,
+        "second_road_number": pl.Int32,
         "pedestrian_crossing_human_control": pl.Enum,
         "pedestrian_crossing_physical_facilities": pl.Enum,
         "light_conditions": pl.Enum,
@@ -97,7 +100,7 @@ schemas = {
         "carriageway_hazards": pl.Enum,
         "urban_or_rural_area": pl.Enum,
         "did_police_officer_attend_scene_of_accident": pl.Enum,
-        "trunk_road_flag": pl.String,  # change to boolean but error currently
+        "trunk_road_flag": pl.Enum,
         "lsoa_of_accident_location": pl.String,
         "enhanced_severity_collision": pl.Enum,
     },
@@ -125,18 +128,6 @@ schemas = {
         "casualty_distance_banding": pl.Enum,
     },
 }
-
-
-def create_column_rename_dict(schema) -> dict:
-    column_names = {}
-    for key in schema.keys():
-        column_names[key] = key.replace("_", " ").title()
-    return column_names
-
-
-def process_date(df, date_column, format):
-    result = df.with_columns(pl.col(date_column).str.to_date(format, strict=False))
-    return result
 
 
 def download(
@@ -221,20 +212,6 @@ def load_datasets(
     }
 
 
-def read(
-    path_log: TypePathLike | None = None,
-    path_data: TypePathLike | None = None,
-    path_env: TypePathLike | None = None,
-) -> dict[str, pl.DataFrame]:
-    df_list = {
-        path.stem: pl.read_parquet(path)
-        for path in fryer.path.for_key(
-            key=KEY, path_data=path_data, path_env=path_env
-        ).rglob("*.parquet")
-    }
-    return df_list
-
-
 def derive(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
@@ -253,18 +230,64 @@ def derive(
             df_operations=None,
             remove_minus_one=True,
             enum_column_maps=info_df,
-            date_formats={"date": "%d/%m/%Y"},
-            column_names=create_column_rename_dict(schemas[dataset]),
+            date_formats=date_formats[dataset],
         )
-        print(df.columns, df.dtypes)
+
+        if dataset == "collision":
+            df = df.with_columns(
+                pl.col("first_road_number").replace(-1, None),
+                pl.col("second_road_number").replace(-1, None),
+            )
+
         df.write_parquet(
             fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
             / f"{dataset}.parquet"
         )
 
 
+def create_column_rename_dict(df, format) -> pl.DataFrame:
+    column_names = {}
+    if format == "title":
+        for col in df.columns:
+            column_names[col] = col.replace("_", " ").title()
+    elif format == "snake":
+        for col in df.columns:
+            column_names[col] = col.lower().replace(" ", "_")
+    elif format == "spaces":
+        for col in df.columns:
+            column_names[col] = col.replace("_", " ")
+    return column_names
+
+
+def read(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+    column_name_format: str = "snake",
+) -> dict[str, pl.DataFrame]:
+    dfs = {
+        path.stem: pl.read_parquet(path)
+        for path in fryer.path.for_key(
+            key=KEY, path_data=path_data, path_env=path_env
+        ).rglob("*.parquet")
+    }
+
+    for dataset, cols in schemas.items():
+        for col, dtype in cols.items():
+            if dtype == pl.Time:
+                dfs[dataset] = dfs[dataset].with_columns(
+                    pl.col(col).cast(pl.Time, strict=False)
+                )
+
+    if column_name_format != "snake":
+        for dataset, df in dfs.items():
+            dfs[dataset] = df.rename(create_column_rename_dict(df, column_name_format))
+
+    return dfs
+
+
 def main():
-    download()
+    # download()
     derive()
 
 

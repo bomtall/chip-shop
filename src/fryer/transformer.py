@@ -80,13 +80,38 @@ def process_data(
                     )
                     .cast(dtype, strict=False)
                 )
+            elif dtype == pl.Boolean:
+                exprs.append(
+                    pl.col(col)
+                    .str.to_lowercase()
+                    .replace(
+                        old=["null", "None", "nan", "", "-1"],
+                        new=[None],
+                    )
+                    .replace(
+                        {
+                            "true": "1",
+                            "false": "0",
+                        }
+                    )
+                    .cast(pl.Int32)
+                    .cast(pl.Boolean, strict=False)
+                )
             elif dtype == pl.Enum:
                 exprs.append(
                     get_column_map_expression(
                         enum_column_maps, col, remove_minus_one=remove_minus_one
                     )
                 )
-
+            elif dtype == pl.Time:
+                exprs.append(
+                    pl.col(col)
+                    .replace(
+                        old=["null", "NULL", "NONE", "None", "nan", "NaN", "", "-1"],
+                        new=[None],
+                    )
+                    .str.to_time(date_formats[col], strict=False)
+                )
             else:
                 exprs.append(pl.col(col).cast(dtype, strict=False))
 
