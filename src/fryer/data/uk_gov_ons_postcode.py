@@ -146,23 +146,29 @@ def write(
         pl.col("dointr").cast(pl.String).str.to_date(format="%Y%m").alias("date_start"),
         # Date of termination - we allow for strict=False as they have not been terminated.
         # If present, the most recent occurrence of the postcode's date of termination, otherwise: null = 'live' postcode
-        pl.col("doterm")
-        .cast(pl.String)
-        .str.to_date(format="%Y%m", strict=False)
-        .alias("date_end"),
+        (
+            pl.col("doterm")
+            .cast(pl.String)
+            .str.to_date(format="%Y%m", strict=False)
+            .alias("date_end")
+        ),
         # The current county to which the postcode has been assigned.
         # Pseudo codes are included for English UAs, Wales, Scotland, Northern Ireland, Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
         pl.col("oscty").cast(pl.Enum(county_map.keys())).alias("county_code"),
-        pl.col("oscty")
-        .replace_strict(county_map, return_dtype=pl.Enum(county_map.values()))
-        .alias("county_name"),
+        (
+            pl.col("oscty")
+            .replace_strict(county_map, return_dtype=pl.Enum(county_map.values()))
+            .alias("county_name")
+        ),
         # The county electoral division code for each English postcode.
         # Pseudo codes are included for the remainder of the UK.
         # The field will be blank for English postcodes with no grid reference
-        pl.col("ced")
-        .cast(pl.Enum(county_electoral_division_map.keys()))
-        .alias("county_electoral_division_code"),
+        (
+            pl.col("ced")
+            .cast(pl.Enum(county_electoral_division_map.keys()))
+            .alias("county_electoral_division_code")
+        ),
         (
             pl.col("ced")
             # Duplicates in the names
