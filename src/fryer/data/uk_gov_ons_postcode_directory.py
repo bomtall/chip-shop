@@ -73,6 +73,7 @@ def get_map_from_zip_file(
     default_value: str | None = None,
     index_columns: Sequence[int] = (0, 1),
 ) -> dict[str, str]:
+    # TODO: add a test for this function
     file_names = [
         name
         for name in zip_file.namelist()
@@ -143,6 +144,8 @@ def write(
         zip_file.read(f"Data/ONSPD_{date_download:%^b}_{date_download:%Y}_UK.csv"),
         infer_schema_length=10_000,
     )
+
+    # TODO: add how to do this using debugger
 
     # Follow f"User Guide/ONSPD User Guide {date_download:%b} {date_download:%Y}.pdf" for data information
     exprs = [
