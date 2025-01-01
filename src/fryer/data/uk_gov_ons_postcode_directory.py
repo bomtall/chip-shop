@@ -76,7 +76,9 @@ def get_map_from_zip_file(
         raise ValueError(f"{len(file_names)=} has to be one {file_names=}")
     map_original = {
         **dict(
-            pl.read_csv(zip_file.read(file_names[0]), columns=index_columns).iter_rows()
+            pl.read_csv(zip_file.read(file_names[0]), columns=index_columns)
+            .drop_nulls()
+            .iter_rows()
         ),
         **additional_map,
     }
@@ -547,6 +549,101 @@ def write(
             pl.col("itl")
             .cast(pl.Enum(map_international_territorial_level.keys()))
             .alias("international_territorial_level_code")
+        ),
+        # The administrative and electoral areas in England and Wales for each postcode, used for statistical analysis.
+        # A pseudo code is included for Scotland, Northern Ireland, Channel Islands and Isle of Man.
+        # The field will be blank for postcodes in England or Wales with no grid reference.
+        (
+            pl.col("statsward")
+            .replace_strict(
+                map_statistical_ward_2005 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="Statistical ward names and codes UK as at 2005",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(sorted(set(map_statistical_ward_2005.values()))),
+            )
+            .alias("statistical_ward_2005")
+        ),
+        (
+            pl.col("statsward")
+            .cast(pl.Enum(map_statistical_ward_2005.keys()))
+            .alias("statistical_ward_2005_code")
+        ),
+        # The 2001 Census OAs (output areas) were built from unit postcodes and constrained to 2003 'statistical' wards,
+        # and they form the building bricks for defining higher level geographies.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        # Cannot find the mapping to the names fr this data
+        (pl.col("oa01").alias("census_output_area_2001_code")),
+        # Sub-threshold wards (those below the threshold for creating OAs and for the nondisclosive release of Census data)
+        # are not separately identified in this field and postcodes in these 'statistical wards' have been assigned to their 'receiving ward'.
+        # The resulting set of wards is known as 'CAS Wards' (census area statistics wards).
+        # A pseudo code is included for Channel Island and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("casward")
+            .replace_strict(
+                map_census_area_statitics_ward := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="CAS ward names and codes UK as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_census_area_statitics_ward.values()))
+                ),
+            )
+            .alias("census_area_statitics_ward")
+        ),
+        (
+            pl.col("casward")
+            .cast(pl.Enum(map_census_area_statitics_ward.keys()))
+            .alias("census_area_statitics_ward_code")
+        ),
+        # The national parks cover parts of England, Wales and Scotland.
+        # Pseudo codes are included for Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("npark")
+            .replace_strict(
+                map_national_park := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="National Park names and codes GB as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(map_national_park.values()),
+            )
+            .alias("national_park")
+        ),
+        (
+            pl.col("npark")
+            .cast(pl.Enum(map_national_park.keys()))
+            .alias("national_park_code")
+        ),
+        # The 2001 Census LSOA code for England and Wales, SOA code for Northern Ireland and DZ code for Scotland.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference
+        (
+            pl.col("lsoa01")
+            .replace_strict(
+                map_lower_layer_super_output_area_census_2001 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="LSOA (2001) names and codes EW & NI as at ",
+                    additional_map={"": UNKNOWN},
+                    # Scotland maps missing
+                    all_keys=df_raw["lsoa01"].unique(),
+                    default_value=UNKNOWN,
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_lower_layer_super_output_area_census_2001.values()))
+                ),
+            )
+            .alias("lower_layer_super_output_area_census_2001")
+        ),
+        (
+            pl.col("lsoa01")
+            .cast(pl.Enum(map_lower_layer_super_output_area_census_2001.keys()))
+            .alias("lower_layer_super_output_area_census_2001_code")
         ),
         # Datetime of the download
         pl.lit(datetime_download).alias("datetime_download"),
