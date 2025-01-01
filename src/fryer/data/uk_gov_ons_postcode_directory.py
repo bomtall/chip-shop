@@ -135,6 +135,7 @@ def write(
     # Need to figure out how to get this via https://geoportal.statistics.gov.uk/search?q=PRD_ONSPD&sort=Date%20Created%7Ccreated%7Cdesc
     logger.info(f"{URL_DOWNLOAD=}, {datetime_download=}, {key=}")
 
+    # Split off this download into a separate function
     response = requests.get(URL_DOWNLOAD)
     zip_file = ZipFile(BytesIO(response.content))
 
@@ -165,6 +166,7 @@ def write(
             .str.to_date(format="%Y%m", strict=False)
             .alias("date_end")
         ),
+        pl.col("date_end").is_null().alias("is_live"),
         # The postcode coordinates in degrees latitude to six decimal places;
         # 99.999999 for postcodes in the Channel Islands and the Isle of Man,
         # and for postcodes with no grid reference.
