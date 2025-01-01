@@ -64,7 +64,7 @@ def download(
         pl.col("id_transaction").cast(pl.String),
         pl.col("price").cast(pl.Float64),
         pl.col("date").str.to_date(format="%Y-%m-%d %H:%M"),
-        pl.col("postcode").cast(pl.String),
+        pl.col("postcode").cast(pl.String).str.strip_chars(" "),
         (
             pl.col("property_type").replace_strict(
                 property_type_map := {

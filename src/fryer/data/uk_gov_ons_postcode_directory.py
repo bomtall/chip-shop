@@ -61,7 +61,10 @@ def path(
     # TODO: Need to figure out a better way of doing this
     today = fryer.datetime.today(path_env=path_env)
     date_download = fryer.datetime.validate_date(DATE_DOWNLOAD)
-    return path_key / f"{date_download}_{today:{FORMAT_ISO_DATE}}.parquet"
+    return (
+        path_key
+        / f"{date_download:{FORMAT_ISO_DATE}}_{today:{FORMAT_ISO_DATE}}.parquet"
+    )
 
 
 def get_map_from_zip_file(
@@ -150,12 +153,12 @@ def write(
 
     # Follow f"User Guide/ONSPD User Guide {date_download:%b} {date_download:%Y}.pdf" for data information
     exprs = [
-        # Postcode in 7 character version
-        pl.col("pcd").alias("postcode"),
-        # Postcode in 8 character version (second part right aligned)
-        pl.col("pcd2").alias("postcode_8"),
         # Postcode as variable length
-        pl.col("pcds").alias("postcode_variable"),
+        pl.col("pcds").alias("postcode"),
+        # Postcode in 7 character version
+        pl.col("pcd").alias("postcode_7_character"),
+        # Postcode in 8 character version (second part right aligned)
+        pl.col("pcd2").alias("postcode_8_character"),
         # Date of introduction - The most recent occurrence of the postcode’s date of introduction.
         pl.col("dointr").cast(pl.String).str.to_date(format="%Y%m").alias("date_start"),
         # Date of termination - we allow for strict=False as they have not been terminated.
@@ -166,7 +169,7 @@ def write(
             .str.to_date(format="%Y%m", strict=False)
             .alias("date_end")
         ),
-        pl.col("date_end").is_null().alias("is_live"),
+        pl.col("doterm").eq("").alias("is_live"),
         # The postcode coordinates in degrees latitude to six decimal places;
         # 99.999999 for postcodes in the Channel Islands and the Isle of Man,
         # and for postcodes with no grid reference.
