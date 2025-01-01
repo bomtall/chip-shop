@@ -31,9 +31,15 @@ PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN = {
     "L99999999": "(pseudo) Channel Islands",
     "M99999999": "(pseudo) Isle of Man",
 }
-PSEUDO_NAMES_NORTHERN_IRELAND_AND_SCOTLAND = {
+PSEUDO_NAMES_NORTHERN_IRELAND = {
     "N99999999": "(pseudo) Northern Ireland",
+}
+PSEUDO_NAMES_SCOTLAND = {
     "S99999999": "(pseudo) Scotland",
+}
+PSEUDO_NAMES_NORTHERN_IRELAND_AND_SCOTLAND = {
+    **PSEUDO_NAMES_NORTHERN_IRELAND,
+    **PSEUDO_NAMES_SCOTLAND,
 }
 PSEUDO_NAMES_WALES = {
     "W99999999": "(pseudo) Wales",
@@ -156,6 +162,38 @@ def write(
             .str.to_date(format="%Y%m", strict=False)
             .alias("date_end")
         ),
+        # The postcode coordinates in degrees latitude to six decimal places;
+        # 99.999999 for postcodes in the Channel Islands and the Isle of Man,
+        # and for postcodes with no grid reference.
+        pl.col("lat").cast(pl.Float32).alias("latitude"),
+        # The postcode coordinates in degrees longitude for each postcode to six decimal places;
+        # 0.000000 for postcodes in the Channel Islands and the Isle of Man,
+        # and for postcodes with no grid reference.
+        pl.col("long").cast(pl.Float32).alias("longitude"),
+        # The OS grid reference Easting to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
+        # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
+        pl.col("oseast1m").replace("", None).cast(pl.Int32).alias("easting"),
+        # The OS grid reference Northing to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
+        # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
+        pl.col("osnrth1m").replace("", None).cast(pl.Int32).alias("northing"),
+        # Shows the status of the assigned grid reference.
+        (
+            pl.col("osgrdind")
+            .replace_strict(
+                map_grid_reference_indicator := {
+                    1: "within the building of the matched address closest to the postcode mean",
+                    2: "within the building of the matched address closest to the postcode mean, except by visual inspection of Landline maps (Scotland only)",
+                    3: "approximate to within 50 metres",
+                    4: "postcode unit mean (mean of matched addresses with the same postcode, but not snapped to a building)",
+                    5: "imputed by ONS, by reference to surrounding postcode grid references",
+                    6: "postcode sector mean, (mainly PO Boxes)",
+                    8: "postcode terminated prior to Gridlink initiative, last known ONS postcode grid reference",
+                    9: "no grid reference available",
+                },
+                return_dtype=pl.Enum(map_grid_reference_indicator.values()),
+            )
+            .alias("grid_reference_indicator")
+        ),
         # The current county to which the postcode has been assigned.
         # Pseudo codes are included for English UAs, Wales, Scotland, Northern Ireland, Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
@@ -274,30 +312,6 @@ def write(
                 return_dtype=pl.Enum(postcode_user_type_map.values()),
             )
             .alias("postcode_user_type")
-        ),
-        # The OS grid reference Easting to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
-        # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
-        pl.col("oseast1m").replace("", None).cast(pl.Int32).alias("easting"),
-        # The OS grid reference Northing to 1 metre resolution; blank for postcodes in the Channel Islands and the Isle of Man.
-        # Grid references for postcodes in Northern Ireland relate to the Irish National Grid.
-        pl.col("osnrth1m").replace("", None).cast(pl.Int32).alias("northing"),
-        # Shows the status of the assigned grid reference.
-        (
-            pl.col("osgrdind")
-            .replace_strict(
-                map_grid_reference_indicator := {
-                    1: "within the building of the matched address closest to the postcode mean",
-                    2: "within the building of the matched address closest to the postcode mean, except by visual inspection of Landline maps (Scotland only)",
-                    3: "approximate to within 50 metres",
-                    4: "postcode unit mean (mean of matched addresses with the same postcode, but not snapped to a building)",
-                    5: "imputed by ONS, by reference to surrounding postcode grid references",
-                    6: "postcode sector mean, (mainly PO Boxes)",
-                    8: "postcode terminated prior to Gridlink initiative, last known ONS postcode grid reference",
-                    9: "no grid reference available",
-                },
-                return_dtype=pl.Enum(map_grid_reference_indicator.values()),
-            )
-            .alias("grid_reference_indicator")
         ),
         # The health area code for the postcode. SHAs were abolished in England in 2013 but the codes remain as a 'frozen' geography.
         # The field will otherwise be blank for postcodes with no grid reference.
@@ -574,8 +588,12 @@ def write(
         # and they form the building bricks for defining higher level geographies.
         # Pseudo codes are included for Channel Islands and Isle of Man.
         # The field will otherwise be blank for postcodes with no grid reference.
-        # Cannot find the mapping to the names fr this data
-        (pl.col("oa01").alias("census_output_area_2001_code")),
+        # Cannot find the mapping to the names for this data.
+        (
+            pl.col("oa01")
+            .cast(pl.Enum(df_raw["oa01"].unique()))
+            .alias("output_area_census_2001_code")
+        ),
         # Sub-threshold wards (those below the threshold for creating OAs and for the nondisclosive release of Census data)
         # are not separately identified in this field and postcodes in these 'statistical wards' have been assigned to their 'receiving ward'.
         # The resulting set of wards is known as 'CAS Wards' (census area statistics wards).
@@ -644,6 +662,479 @@ def write(
             pl.col("lsoa01")
             .cast(pl.Enum(map_lower_layer_super_output_area_census_2001.keys()))
             .alias("lower_layer_super_output_area_census_2001_code")
+        ),
+        # The 2001 Census MSOA (middle layer super output area) code for England and Wales and IZ code for Scotland.
+        # Pseudo codes are included for Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("msoa01")
+            .replace_strict(
+                map_middle_layer_super_output_area_census_2001 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="MSOA (2001) names and codes GB as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                        **PSEUDO_NAMES_NORTHERN_IRELAND,
+                    },
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_middle_layer_super_output_area_census_2001.values()))
+                ),
+            )
+            .alias("middle_layer_super_output_area_census_2001")
+        ),
+        (
+            pl.col("msoa01")
+            .cast(pl.Enum(map_middle_layer_super_output_area_census_2001.keys()))
+            .alias("middle_layer_super_output_area_census_2001_code")
+        ),
+        # The 2001 Census urban and rural classification of OAs for England and Wales, Scotland and Northern Ireland.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        # N.B. the code ranges 1-8 differ between England/Wales and Scotland.
+        (
+            pl.col("ur01ind")
+            .replace_strict(
+                map_urban_rural_indicator_census_2001 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="Urban Rural (2001) Indicator names and codes UK",
+                    additional_map={" ": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(map_urban_rural_indicator_census_2001.values()),
+            )
+            .alias("urban_rural_indicator_census_2001")
+        ),
+        (
+            pl.col("ur01ind")
+            .cast(pl.Enum(map_urban_rural_indicator_census_2001.keys()))
+            .alias("urban_rural_indicator_census_2001_code")
+        ),
+        # The 2001 Census OAC (output area classification) code for each postcode in the UK.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("oac01")
+            .replace_strict(
+                map_output_area_classification_supergroup_census_2001
+                := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="2001 Census Output Area Classification Names and Codes UK",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 1),
+                ),
+                return_dtype=pl.Enum(
+                    sorted(
+                        set(
+                            map_output_area_classification_supergroup_census_2001.values()
+                        )
+                    )
+                ),
+            )
+            .alias("output_area_classification_supergroup_census_2001")
+        ),
+        (
+            pl.col("oac01")
+            .replace_strict(
+                map_output_area_classification_group_census_2001
+                := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="2001 Census Output Area Classification Names and Codes UK",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 2),
+                ),
+                return_dtype=pl.Enum(
+                    sorted(
+                        set(map_output_area_classification_group_census_2001.values())
+                    )
+                ),
+            )
+            .alias("output_area_classification_group_census_2001")
+        ),
+        # We omit, subgroup for two reasons:
+        # 1) it is just group plus the last character from the bode
+        # 2) it has a mistake - Settled households (1) comes twice
+        (
+            pl.col("oac01")
+            .cast(pl.Enum(map_output_area_classification_group_census_2001.keys()))
+            .alias("output_area_classification_census_2001_code")
+        ),
+        # The 2011 Census OAs in GB and SAs in Northern Ireland were based on 2001 Census OAs,
+        # and they form the building bricks for defining higher level geographies.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        # Cannot find the mapping to the names for this data.
+        (
+            pl.col("oa11")
+            .cast(pl.Enum(df_raw["oa11"].unique()))
+            .alias("output_area_census_2011_code")
+        ),
+        # The 2011 Census LSOA (England and Wales), SOA (Northern Ireland) and DZ (Scotland) code.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        # N.B. NI SOAs remain unchanged from 2001
+        (
+            pl.col("lsoa11")
+            .replace_strict(
+                map_lower_layer_super_output_area_census_2011 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="LSOA (2011) names and codes UK as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_lower_layer_super_output_area_census_2011.values()))
+                ),
+            )
+            .alias("lower_layer_super_output_area_census_2011")
+        ),
+        (
+            pl.col("lsoa11")
+            .cast(pl.Enum(map_lower_layer_super_output_area_census_2011.keys()))
+            .alias("lower_layer_super_output_area_census_2011_code")
+        ),
+        # The 2011 Census MSOA code for England and Wales and IZ zone for Scotland.
+        # Pseudo codes are included for Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("msoa11")
+            .replace_strict(
+                map_middle_layer_super_output_area_census_2011 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="MSOA (2011) names and codes UK as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_middle_layer_super_output_area_census_2011.values()))
+                ),
+            )
+            .alias("middle_layer_super_output_area_census_2011")
+        ),
+        (
+            pl.col("msoa11")
+            .cast(pl.Enum(map_middle_layer_super_output_area_census_2011.keys()))
+            .alias("middle_layer_super_output_area_census_2011_code")
+        ),
+        # The UK WZ (workplace zone) code.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will be blank for UK postcodes with no grid reference.
+        # No mapping data found for this
+        pl.col("wz11")
+        .cast(pl.Enum(df_raw["wz11"].unique()))
+        .alias("workplace_zone_census_11"),
+        # The code for the:
+        #   - Sub ICB (integrated health board) Locations in England
+        #   - LHBs (local health board) in Wales
+        #   - CHPs (community health partnership) in Scotland
+        #   - LCG (local commissioning group) in Northern Ireland
+        #   - PHD (primary healthcare directorate) in the Isle of Man
+        #   - there are no equivalent areas in the Channel Islands (for which a pseudo code is included)
+        # The field will be blank for postcodes in England or Wales with no grid reference.
+        (
+            pl.col("sicbl")
+            .replace_strict(
+                map_sub_integrated_health_board_location := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="Sub_ICB Location and Local Health Board names and codes UK as at ",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 2),
+                ),
+                return_dtype=pl.Enum(map_sub_integrated_health_board_location.values()),
+            )
+            .alias("sub_integrated_health_board_location")
+        ),
+        (
+            pl.col("sicbl")
+            .cast(pl.Enum(map_sub_integrated_health_board_location.keys()))
+            .alias("sub_integrated_health_board_location_code")
+        ),
+        # The code for the BUAs (built up areas) in England and Wales.
+        # Cross-border codes are included for areas straddling the English/Welsh border.
+        # Pseudo codes are included for Scotland, Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for non-BUA postcodes or those with no grid reference.
+        (
+            pl.col("bua24")
+            .replace_strict(
+                map_built_up_area := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="BUA24 names and codes EW as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                        **PSEUDO_NAMES_NORTHERN_IRELAND_AND_SCOTLAND,
+                    },
+                ),
+                return_dtype=pl.Enum(map_built_up_area.values()),
+            )
+            .alias("built_up_area")
+        ),
+        (
+            pl.col("bua24")
+            .cast(pl.Enum(map_built_up_area.keys()))
+            .alias("built_up_area_code")
+        ),
+        # The 2011 Census rural-urban classification of OAs for England and Wales, Scotland and Northern Ireland.
+        # A pseudo code is included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("ru11ind")
+            .replace_strict(
+                map_rural_urban_indicator_census_2011 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="Rural Urban (2011) Indicator names and codes GB as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(map_rural_urban_indicator_census_2011.values()),
+            )
+            .alias("rural_urban_indicator_census_2011")
+        ),
+        (
+            pl.col("ru11ind")
+            .cast(pl.Enum(map_rural_urban_indicator_census_2011.keys()))
+            .alias("rural_urban_indicator_census_2011_code")
+        ),
+        # The 2011 Census OAC (output area classification) code for each postcode in the UK.
+        # A pseudo code is included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("oac11")
+            .replace_strict(
+                map_output_area_classification_supergroup_census_2011
+                := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="2011 Census Output Area Classification Names and Codes UK",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 1),
+                ),
+                return_dtype=pl.Enum(
+                    sorted(
+                        set(
+                            map_output_area_classification_supergroup_census_2011.values()
+                        )
+                    )
+                ),
+            )
+            .alias("output_area_classification_supergroup_census_2011")
+        ),
+        (
+            pl.col("oac11")
+            .replace_strict(
+                map_output_area_classification_group_census_2011
+                := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="2011 Census Output Area Classification Names and Codes UK",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 2),
+                ),
+                return_dtype=pl.Enum(
+                    sorted(
+                        set(map_output_area_classification_group_census_2011.values())
+                    )
+                ),
+            )
+            .alias("output_area_classification_group_census_2011")
+        ),
+        (
+            pl.col("oac11")
+            .replace_strict(
+                map_output_area_classification_subgroup_census_2011
+                := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="2011 Census Output Area Classification Names and Codes UK",
+                    additional_map={"": UNKNOWN},
+                    index_columns=(0, 3),
+                ),
+                return_dtype=pl.Enum(
+                    map_output_area_classification_subgroup_census_2011.values()
+                ),
+            )
+            .alias("output_area_classification_subgroup_census_2011")
+        ),
+        (
+            pl.col("oac11")
+            .cast(pl.Enum(map_output_area_classification_subgroup_census_2011.keys()))
+            .alias("output_area_classification_census_2011_code")
+        ),
+        # The primary LEP (local enterprise partnership) code for each English postcode.
+        # Pseudo codes are included for the remainder of the UK.
+        # The field will be blank for English postcodes with no grid reference.
+        (
+            pl.col("lep1")
+            .replace_strict(
+                map_local_enterprise_partnership := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="LEP names and codes EN as at ",
+                    additional_map={"": UNKNOWN, **PSEUDO_NAMES},
+                ),
+                return_dtype=pl.Enum(map_local_enterprise_partnership.values()),
+            )
+            .alias("local_enterprise_partnership")
+        ),
+        (
+            pl.col("lep1")
+            .cast(pl.Enum(map_local_enterprise_partnership.keys()))
+            .alias("local_enterprise_partnership_code")
+        ),
+        # Where LEPs (local enterprise partnerships) overlap, the secondary code for each affected English postcode.
+        # Pseudo codes are included for the rest of the UK.
+        # The field will be blank for English postcodes with no grid reference.
+        (
+            pl.col("lep2")
+            .replace_strict(
+                map_local_enterprise_partnership,
+                return_dtype=pl.Enum(map_local_enterprise_partnership.values()),
+            )
+            .alias("local_enterprise_partnership_overlap")
+        ),
+        (
+            pl.col("lep2")
+            .cast(pl.Enum(map_local_enterprise_partnership.keys()))
+            .alias("local_enterprise_partnership_overlap_code")
+        ),
+        # The PFA (police force area) code for each postcode.
+        # A single PFA covers each of Scotland and Northern Ireland (not coded).
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("pfa")
+            .replace_strict(
+                map_police_force_area := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="PFA names and codes GB as at ",
+                    additional_map={"": UNKNOWN},
+                ),
+                return_dtype=pl.Enum(map_police_force_area.values()),
+            )
+            .alias("police_force_area")
+        ),
+        (
+            pl.col("pfa")
+            .cast(pl.Enum(map_police_force_area.keys()))
+            .alias("police_force_area_code")
+        ),
+        # The IMD (index of multiple deprivation) rank for the LSOA (or OA or DZ) of each postcode, where 1 is the most deprived.
+        # A zero is included for Channel Islands and Isle of Man, also for postcodes with no grid reference.
+        # We convert zeros to nulls.
+        pl.col("imd")
+        .cast(pl.Int32)
+        .alias("index_of_multiple_deprivation")
+        .replace(0, None),
+        # The Cancer Alliance code for each postcode.
+        # Pseudo codes are included for Wales, Scotland, Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("calncv")
+            .replace_strict(
+                map_cancer_alliance := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="CALNCV names and codes EN as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        # This one not found in the mapping file
+                        "E56000035": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                        **PSEUDO_NAMES_NORTHERN_IRELAND_AND_SCOTLAND,
+                        **PSEUDO_NAMES_WALES,
+                    },
+                ),
+                return_dtype=pl.Enum(sorted(set(map_cancer_alliance.values()))),
+            )
+            .alias("cancer_alliance")
+        ),
+        (
+            pl.col("calncv")
+            .cast(pl.Enum(map_cancer_alliance.keys()))
+            .alias("cancer_alliance_code")
+        ),
+        # The ICB code for each postcode.
+        # Pseudo codes are included for Wales, Scotland, Northern Ireland, Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference
+        (
+            pl.col("icb")
+            .replace_strict(
+                map_integrated_care_board := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="ICB names and codes UK as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                        **PSEUDO_NAMES_NORTHERN_IRELAND_AND_SCOTLAND,
+                        **PSEUDO_NAMES_WALES,
+                    },
+                    index_columns=(0, 2),
+                ),
+                return_dtype=pl.Enum(map_integrated_care_board.values()),
+            )
+            .alias("integrated_care_board")
+        ),
+        (
+            pl.col("icb")
+            .cast(pl.Enum(map_integrated_care_board.keys()))
+            .alias("integrated_care_board_code")
+        ),
+        # The 2021 Census OAs in England and Wales were based on 2011 Census OAs,
+        # and they form the building bricks for defining higher level geographies.
+        # DZs are included for NI and pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for postcodes with no grid reference.
+        (
+            pl.col("oa21")
+            .cast(pl.Enum(df_raw["oa21"].unique()))
+            .alias("output_area_census_2021_code")
+        ),
+        # The 2021 Census LSOA codes in England and Wales.
+        # SDZs are included for NI and pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for Scottish postcodes, and those with no grid reference.
+        (
+            pl.col("lsoa21")
+            .replace_strict(
+                map_lower_layer_super_output_area_census_2021 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="LSOA (2021) names and codes EW as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                    },
+                    # Imperfect mapping for non England and Wales
+                    all_keys=df_raw["lsoa21"].unique(),
+                    default_value=UNKNOWN,
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_lower_layer_super_output_area_census_2021.values()))
+                ),
+            )
+            .alias("lower_layer_super_output_area_census_2021")
+        ),
+        (
+            pl.col("lsoa21")
+            .cast(pl.Enum(map_lower_layer_super_output_area_census_2021.keys()))
+            .alias("lower_layer_super_output_area_census_2021_code")
+        ),
+        # The 2021 Census MSOA code for England and Wales.
+        # Pseudo codes are included for Channel Islands and Isle of Man.
+        # The field will otherwise be blank for Scottish and NI postcodes, and those with no grid reference.
+        (
+            pl.col("msoa21")
+            .replace_strict(
+                map_middle_layer_super_output_area_census_2021 := get_map_from_zip_file(
+                    zip_file=zip_file,
+                    file_name_to_search="MSOA (2021) names and codes EW as at ",
+                    additional_map={
+                        "": UNKNOWN,
+                        **PSEUDO_NAMES_CHANNEL_ISLANDS_AND_ISLE_OF_MAN,
+                    },
+                    # Imperfect mapping for non England and Wales
+                    all_keys=df_raw["msoa21"].unique(),
+                    default_value=UNKNOWN,
+                ),
+                return_dtype=pl.Enum(
+                    sorted(set(map_middle_layer_super_output_area_census_2021.values()))
+                ),
+            )
+            .alias("middle_layer_super_output_area_census_2021")
+        ),
+        (
+            pl.col("msoa21")
+            .cast(pl.Enum(map_middle_layer_super_output_area_census_2021.keys()))
+            .alias("middle_layer_super_output_area_census_2021_code")
         ),
         # Datetime of the download
         pl.lit(datetime_download).alias("datetime_download"),
