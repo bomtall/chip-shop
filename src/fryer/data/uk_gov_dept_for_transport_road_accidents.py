@@ -306,17 +306,19 @@ def read(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
     column_name_format: str = "snake",
+    datasets_to_read: list[str] = ["vehicle", "collision", "casualty"],
 ) -> dict[str, pl.DataFrame]:
     dfs = {
         path.stem: pl.read_parquet(path)
         for path in fryer.path.for_key(
             key=KEY, path_data=path_data, path_env=path_env
         ).rglob("*.parquet")
+        if path.stem in datasets_to_read
     }
 
     for dataset, cols in schemas.items():
         for col, dtype in cols.items():
-            if dtype == pl.Time:
+            if dtype == pl.Time and dataset in datasets_to_read:
                 dfs[dataset] = dfs[dataset].with_columns(
                     pl.col(col).cast(pl.Time, strict=False)
                 )
@@ -326,6 +328,36 @@ def read(
             dfs[dataset] = df.rename(create_column_rename_dict(df, column_name_format))
 
     return dfs
+
+
+def read_collision(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> pl.DataFrame:
+    return read(path_data=path_data, path_env=path_env, datasets_to_read=["collision"])[
+        "collision"
+    ]
+
+
+def read_casualty(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> pl.DataFrame:
+    return read(path_data=path_data, path_env=path_env, datasets_to_read=["casualty"])[
+        "casualty"
+    ]
+
+
+def read_vehicle(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> pl.DataFrame:
+    return read(path_data=path_data, path_env=path_env, datasets_to_read=["vehicle"])[
+        "vehicle"
+    ]
 
 
 def main():
