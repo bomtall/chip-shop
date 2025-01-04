@@ -176,89 +176,89 @@ def path(
 
 
 FORCE_MAPPING = {
-    "Avon and Somerset Constabulary": "AvonAndSomersetConstabulary",
-    "Bedfordshire Police": "BedfordshirePolice",
-    "British Transport Police": "BritishTransportPolice",
-    "Cambridgeshire Constabulary": "CambridgeshireConstabulary",
-    "Cheshire Constabulary": "CheshireConstabulary",
-    "City of London Police": "CityOfLondonPolice",
-    "Cleveland Police": "ClevelandPolice",
-    "Cumbria Constabulary": "CumbriaConstabulary",
-    "Derbyshire Constabulary": "DerbyshireConstabulary",
-    "Devon & Cornwall Police": "DevonAndCornwallPolice",
-    "Dorset Police": "DorsetPolice",
-    "Durham Constabulary": "DurhamConstabulary",
-    "Dyfed-Powys Police": "DyfedPowysPolice",
-    "Essex Police": "EssexPolice",
-    "Gloucestershire Constabulary": "GloucestershireConstabulary",
-    "Greater Manchester Police": "GreaterManchesterPolice",
-    "Gwent Police": "GwentPolice",
-    "Hampshire Constabulary": "HampshireConstabulary",
-    "Hertfordshire Constabulary": "HertfordshireConstabulary",
-    "Humberside Police": "HumbersidePolice",
-    "Kent Police": "KentPolice",
-    "Lancashire Constabulary": "LancashireConstabulary",
-    "Leicestershire Police": "LeicestershirePolice",
-    "Lincolnshire Police": "LincolnshirePolice",
-    "Merseyside Police": "MerseysidePolice",
-    "Metropolitan Police Service": "MetropolitanPoliceService",
-    "Norfolk Constabulary": "NorfolkConstabulary",
-    "North Wales Police": "NorthWalesPolice",
-    "North Yorkshire Police": "NorthYorkshirePolice",
-    "Northamptonshire Police": "NorthamptonshirePolice",
-    "Northumbria Police": "NorthumbriaPolice",
-    "Nottinghamshire Police": "NottinghamshirePolice",
-    "Police Service of Northern Ireland": "PoliceServiceOfNorthernIreland",
-    "South Wales Police": "SouthWalesPolice",
-    "South Yorkshire Police": "SouthYorkshirePolice",
-    "Staffordshire Police": "StaffordshirePolice",
-    "Suffolk Constabulary": "SuffolkConstabulary",
-    "Surrey Police": "SurreyPolice",
-    "Sussex Police": "SussexPolice",
-    "Thames Valley Police": "ThamesValleyPolice",
-    "Warwickshire Police": "WarwickshirePolice",
-    "West Mercia Police": "WestMerciaPolice",
-    "West Midlands Police": "WestMidlandsPolice",
-    "West Yorkshire Police": "WestYorkshirePolice",
-    "Wiltshire Police": "WiltshirePolice",
+    "Avon and Somerset Constabulary": "avon_and_somerset_constabulary",
+    "Bedfordshire Police": "bedfordshire_police",
+    "British Transport Police": "british_transport_police",
+    "Cambridgeshire Constabulary": "cambridgeshire_constabulary",
+    "Cheshire Constabulary": "cheshire_constabulary",
+    "City of London Police": "city_of_london_police",
+    "Cleveland Police": "cleveland_police",
+    "Cumbria Constabulary": "cumbria_constabulary",
+    "Derbyshire Constabulary": "derbyshire_constabulary",
+    "Devon & Cornwall Police": "devon_and_cornwall_police",
+    "Dorset Police": "dorset_police",
+    "Durham Constabulary": "durham_constabulary",
+    "Dyfed-Powys Police": "dyfed_powys_police",
+    "Essex Police": "essex_police",
+    "Gloucestershire Constabulary": "gloucestershire_constabulary",
+    "Greater Manchester Police": "greater_manchester_police",
+    "Gwent Police": "gwent_police",
+    "Hampshire Constabulary": "hampshire_constabulary",
+    "Hertfordshire Constabulary": "hertfordshire_constabulary",
+    "Humberside Police": "humberside_police",
+    "Kent Police": "kent_police",
+    "Lancashire Constabulary": "lancashire_constabulary",
+    "Leicestershire Police": "leicestershire_police",
+    "Lincolnshire Police": "lincolnshire_police",
+    "Merseyside Police": "merseyside_police",
+    "Metropolitan Police Service": "metropolitan_police_service",
+    "Norfolk Constabulary": "norfolk_constabulary",
+    "North Wales Police": "north_wales_police",
+    "North Yorkshire Police": "north_yorkshire_police",
+    "Northamptonshire Police": "northamptonshire_police",
+    "Northumbria Police": "northumbria_police",
+    "Nottinghamshire Police": "nottinghamshire_police",
+    "Police Service of Northern Ireland": "police_service_of_northern_ireland",
+    "South Wales Police": "south_wales_police",
+    "South Yorkshire Police": "south_yorkshire_police",
+    "Staffordshire Police": "staffordshire_police",
+    "Suffolk Constabulary": "suffolk_constabulary",
+    "Surrey Police": "surrey_police",
+    "Sussex Police": "sussex_police",
+    "Thames Valley Police": "thames_valley_police",
+    "Warwickshire Police": "warwickshire_police",
+    "West Mercia Police": "west_mercia_police",
+    "West Midlands Police": "west_midlands_police",
+    "West Yorkshire Police": "west_yorkshire_police",
+    "Wiltshire Police": "wiltshire_police",
 }
 
 
 CRIME_TYPE_MAPPING = {
     # Total for all categories.
-    "All crime": "AllCrime",
+    "All crime": "all_crime",
     # Includes personal, environmental and nuisance anti-social behaviour.
-    "Anti-social behaviour": "AntiSocialBehaviour",
+    "Anti-social behaviour": "anti_social_behaviour",
     # Includes the taking without consent or theft of a pedal cycle.
-    "Bicycle theft": "BicycleTheft",
+    "Bicycle theft": "bicycle_theft",
     # Includes offences where a person enters a house or other building with the intention of stealing.
-    "Burglary": "Burglary",
+    "Burglary": "burglary",
     # Includes damage to buildings and vehicles and deliberate damage by fire.
-    "Criminal damage and arson": "CriminalDamageAndArson",
+    "Criminal damage and arson": "criminal_damage_and_arson",
     # Includes offences related to possession, supply and production.
-    "Drugs": "Drugs",
+    "Drugs": "drugs",
     # Includes forgery, perjury and other miscellaneous crime.
-    "Other crime": "OtherCrime",
+    "Other crime": "other_crime",
     # Includes theft by an employee, blackmail and making off without payment.
-    "Other theft": "OtherTheft",
+    "Other theft": "other_theft",
     # Includes possession of a weapon, such as a firearm or knife.
-    "Possession of weapons": "PossessionOfWeapons",
+    "Possession of weapons": "possession_of_weapons",
     # Includes offences which cause fear, alarm or distress.
-    "Public order": "PublicOrder",
+    "Public order": "public_order",
     # Includes offences where a person uses force or threat of force to steal.
-    "Robbery": "Robbery",
+    "Robbery": "robbery",
     # Includes theft from shops or stalls.
-    "Shoplifting": "Shoplifting",
+    "Shoplifting": "shoplifting",
     # Includes crimes that involve theft directly from the victim (including handbag, wallet, cash, mobile phones) but without the use or threat of physical force.
-    "Theft from the person": "TheftFromThePerson",
+    "Theft from the person": "theft_from_the_person",
     # Includes theft from or of a vehicle or interference with a vehicle.
-    "Vehicle crime": "VehicleCrime",
+    "Vehicle crime": "vehicle_crime",
     # Includes offences against the person such as common assaults, Grievous Bodily Harm and sexual offences.
-    "Violence and sexual offences": "ViolenceAndSexualOffences",
+    "Violence and sexual offences": "violence_and_sexual_offences",
     # This is present in older data but not in the latest list of categories, the name is self explanatory.
-    "Violent crime": "ViolenceAndSexualOffences",
+    "Violent crime": "violence_and_sexual_offences",
     # This is present in older data but not in the latest list of categories, the name is self explanatory.
-    "Public disorder and weapons": "PublicOrder",
+    "Public disorder and weapons": "public_order",
 }
 
 
@@ -314,38 +314,44 @@ def write_street(
     logger.info(f"Reading from {len(files_to_read)=}")
 
     exprs = [
-        pl.col("Crime ID").cast(pl.String).alias("idCrime"),
+        pl.col("Crime ID").cast(pl.String).alias("id_crime"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("month"),
         pl.col("Month").str.to_date(format="%Y-%m").alias("date"),
-        pl.col("Reported by")
-        .replace_strict(
-            FORCE_MAPPING,
-            return_dtype=pl.Enum(FORCE_MAPPING.values()),
-        )
-        .alias("forceReportedBy"),
-        pl.col("Falls within")
-        .replace_strict(
-            FORCE_MAPPING,
-            return_dtype=pl.Enum(FORCE_MAPPING.values()),
-        )
-        .alias("forceFallsWithin"),
+        (
+            pl.col("Reported by")
+            .replace_strict(
+                FORCE_MAPPING,
+                return_dtype=pl.Enum(FORCE_MAPPING.values()),
+            )
+            .alias("force_reported_by")
+        ),
+        (
+            pl.col("Falls within")
+            .replace_strict(
+                FORCE_MAPPING,
+                return_dtype=pl.Enum(FORCE_MAPPING.values()),
+            )
+            .alias("force_falls_within")
+        ),
         pl.col("Longitude").cast(pl.Float32).alias("longitude"),
         pl.col("Latitude").cast(pl.Float32).alias("latitude"),
         pl.col("Location").cast(pl.String).alias("location"),
-        pl.col("LSOA code").cast(pl.String).alias("lsoaCode"),
-        pl.col("LSOA name").cast(pl.String).alias("lsoaName"),
-        pl.col("Crime type")
-        .replace_strict(
-            CRIME_TYPE_MAPPING,
-            return_dtype=pl.Enum(sorted(set(CRIME_TYPE_MAPPING.values()))),
-        )
-        .alias("crimeType"),
-        pl.col("Last outcome category").cast(pl.String).alias("lastOutcomeCategory"),
+        pl.col("LSOA code").cast(pl.String).alias("lower_layer_super_output_area_code"),
+        pl.col("LSOA name").cast(pl.String).alias("lower_layer_super_output_area_name"),
+        (
+            pl.col("Crime type")
+            .replace_strict(
+                CRIME_TYPE_MAPPING,
+                return_dtype=pl.Enum(sorted(set(CRIME_TYPE_MAPPING.values()))),
+            )
+            .alias("crime_type")
+        ),
+        pl.col("Last outcome category").cast(pl.String).alias("last_outcome_category"),
         pl.col("Context").cast(pl.String).alias("context"),
     ]
 
     datetime_download = pd.Timestamp.fromtimestamp(path_raw.stat().st_mtime)
-    additional_exprs = [pl.lit(datetime_download).alias("datetimeDownload")]
+    additional_exprs = [pl.lit(datetime_download).alias("datetime_download")]
 
     df = pl.concat(
         [pl.read_csv(zip_file.read(file_to_read)) for file_to_read in files_to_read]
