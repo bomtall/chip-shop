@@ -18,7 +18,15 @@ guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"
 )
 
-__all__ = ["KEY", "download", "derive", "read"]
+__all__ = [
+    "KEY",
+    "download",
+    "derive",
+    "read",
+    "read_collision",
+    "read_casualty",
+    "read_vehicle",
+]
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"

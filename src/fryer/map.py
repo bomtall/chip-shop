@@ -1,7 +1,10 @@
 import folium
 
 
-def create_map(
+__all__ = ["create"]
+
+
+def create(
     latitude: float = 55.3784, longitude: float = -3.4360, zoom_start: int = 6
 ) -> folium.Map:
     """
