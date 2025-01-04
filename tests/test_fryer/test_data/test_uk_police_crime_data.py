@@ -73,6 +73,7 @@ def test_write_raw_all(temp_dir):
     )
 
 
+@pytest.mark.skip("Too network intensive for current setup")
 @pytest.mark.integration
 @pytest.mark.parametrize("month", ["2018-01-01", "2024-01-01"])
 def test_write_street(month, temp_dir):
@@ -84,6 +85,7 @@ def test_write_street(month, temp_dir):
     )
 
 
+@pytest.mark.skip("Too network intensive for current setup")
 @pytest.mark.integration
 def test_read_street():
     df = fryer.data.uk_police_crime_data.read_street()

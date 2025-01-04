@@ -33,7 +33,7 @@ def process_data(
     column_names: Optional[Dict[str, str]] = None,
     column_operations: Optional[Dict[str, pl.Expr]] = None,
     df_operations: Optional[List[Callable]] = None,
-    enum_column_maps: Optional[pl.DataFrame] = None,
+    enum_column_maps: Optional[pl.DataFrame] = pl.DataFrame(),
     remove_minus_one: bool = False,
 ) -> pl.DataFrame:
     """
@@ -96,11 +96,17 @@ def process_data(
                     .cast(pl.Boolean, strict=False)
                 )
             elif dtype == pl.Enum:
-                exprs.append(
-                    get_column_map_expression(
-                        enum_column_maps, col, remove_minus_one=remove_minus_one
+                if (
+                    not enum_column_maps.is_empty()
+                    and col in enum_column_maps["field name"].unique()
+                ):
+                    exprs.append(
+                        get_column_map_expression(
+                            enum_column_maps, col, remove_minus_one=remove_minus_one
+                        )
                     )
-                )
+                else:
+                    exprs.append(pl.col(col).cast(pl.Enum(df[col].unique())))
             elif dtype == pl.Time:
                 exprs.append(
                     pl.col(col)
