@@ -19,10 +19,8 @@ def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr
 
     if remove_minus_one and "-1" in col_map:
         col_map.pop("-1")  # remove missing values from enum
-    print(field_name)
-    print(col_map)
     return pl.col(field_name).replace_strict(
-        col_map, return_dtype=pl.Enum(list(set(col_map.values()))), default=None
+        col_map, return_dtype=pl.Enum(sorted(set(col_map.values()))), default=None
     )
 
 

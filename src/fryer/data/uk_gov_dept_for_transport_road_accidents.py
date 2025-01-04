@@ -1,7 +1,9 @@
-from pathlib import Path
 import requests
+from pathlib import Path
 
 import polars as pl
+import pandas as pd
+from shapely.geometry import Point
 
 import fryer.data
 import fryer.datetime
@@ -10,6 +12,7 @@ import fryer.path
 import fryer.requests
 from fryer.typing import TypePathLike
 import fryer.transformer
+
 
 guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"
@@ -82,7 +85,7 @@ schemas = {
         "time": pl.Time,
         "local_authority_district": pl.Enum,
         "local_authority_ons_district": pl.String,
-        "local_authority_highway": pl.Enum,
+        "local_authority_highway": pl.String,
         "first_road_class": pl.Enum,
         "first_road_number": pl.Int32,
         "road_type": pl.Enum,
@@ -129,6 +132,50 @@ schemas = {
     },
 }
 
+transformations = {
+    "vehicle": {"age_of_driver": pl.col("age_of_driver").replace(-1, None)},
+    "collision": {
+        "severity": pl.when(
+            pl.col("accident_severity") == "Serious",
+            ~pl.col("enhanced_severity_collision").is_null(),
+        )
+        .then(
+            pl.concat_str(
+                [pl.col("accident_severity"), pl.col("enhanced_severity_collision")],
+                separator=" - ",
+            ).alias("severity")
+        )
+        .otherwise(pl.col("accident_severity").alias("severity"))
+    },
+    "casualty": [],
+}
+
+
+def release_schedule(
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+):
+    path_key = fryer.path.for_key(key=KEY_RAW, path_data=path_data, path_env=path_env)
+    logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
+
+    # get and sort a list of the created datetimes of the existing files
+    ts = [
+        pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
+        for filepath in path_key.rglob("*.csv")
+    ]
+    ts.sort(reverse=True)
+
+    new_data_available = ts[0] > pd.Timestamp(
+        ts[0].year, 10, 1
+    ) and pd.Timestamp.today() > pd.Timestamp(ts[0].year + 1, 10, 1)
+
+    if not new_data_available:
+        logger.info(f"Data for {ts[0].year - 1} is already downloaded")
+        logger.info(f"Data for {ts[0].year} has not been released yet")
+        logger.info(f"Skipping download of {path_key=}")
+    return new_data_available
+
 
 def download(
     path_log: TypePathLike | None = None,
@@ -139,6 +186,9 @@ def download(
     path_key = fryer.path.for_key(
         key=KEY_RAW, path_data=path_data, path_env=path_env, mkdir=True
     )
+
+    if not release_schedule(path_data=path_data, path_env=path_env):
+        return
 
     base_url = "https://data.dft.gov.uk/road-accidents-safety-data"
 
@@ -168,33 +218,15 @@ def load_data_guide(
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ):
-    # mapping = {"enhanced_collision_severity": "accident_severity"}
-
-    return (
-        pl.read_excel(
-            fryer.path.for_key(key=KEY_RAW, path_data=path_data)
-            / "dft-road-safety-open-dataset-guide-2024.xlsx"
-        )
-        # .filter(
-        #     ~pl.col("field name").is_in(
-        #         ["legacy_collision_severity", "accident_severity"]
-        #     )
-        # )
-        .with_columns(
-            pl.col("table").str.replace("accident", "collision"),
-            #     pl.col("field name").str.replace_many(mapping),
-        )
-        # .extend(
-        #     pl.DataFrame(
-        #         {
-        #             "table": ["collision"],
-        #             "field name": ["accident_severity"],
-        #             "code/format": ["2"],
-        #             "label": ["Serious"],
-        #             "note": ["legacy_collision_severity"],
-        #         }
-        #     )
-        # )
+    # fix inconsistant naming between actual data and data guide
+    return pl.read_excel(
+        fryer.path.for_key(key=KEY_RAW, path_data=path_data)
+        / "dft-road-safety-open-dataset-guide-2024.xlsx"
+    ).with_columns(
+        pl.col("table").str.replace("accident", "collision"),
+        pl.col("field name").str.replace(
+            "enhanced_collision_severity", "enhanced_severity_collision"
+        ),
     )
 
 
@@ -220,13 +252,17 @@ def derive(
     enum_mapping = load_data_guide(path_data=path_data, path_env=path_env)
     datasets = load_datasets(path_data=path_data, path_env=path_env)
 
+    gdf = fryer.data.ons_local_authority_district_boundaries.read(
+        path_data=path_data, path_env=path_env
+    )
+
     for dataset, path in datasets.items():
         info_df = enum_mapping.filter(pl.col("table") == dataset)
         df = fryer.transformer.process_data(
             file_path=path,
             file_type="csv",
             schema=schemas[dataset],
-            column_operations=None,
+            column_operations=transformations[dataset],
             df_operations=None,
             remove_minus_one=True,
             enum_column_maps=info_df,
@@ -234,6 +270,12 @@ def derive(
         )
 
         if dataset == "collision":
+            for row in df.iter_rows():
+                if row[15] in [None, -1, "-1"] and row[5] and row[6]:
+                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][
+                        "LAD24CD"
+                    ]
+
             df = df.with_columns(
                 pl.col("first_road_number").replace(-1, None),
                 pl.col("second_road_number").replace(-1, None),
@@ -287,7 +329,7 @@ def read(
 
 
 def main():
-    # download()
+    download()
     derive()
 
 
