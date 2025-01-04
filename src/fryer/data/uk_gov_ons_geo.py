@@ -177,8 +177,8 @@ def write_raw(
 
             batch_start = batch[0]
             batch_end = batch[-1]
+            # Use batch start and end to query within max query record count
             url_chunk = f"{url_query}?outFields=*&where=1%3D1+AND+{object_id_field}+BETWEEN+{batch_start}+AND+{batch_end}&f=geojson"
-
             logger.info(f"{url_chunk=!s}, {batch_start=}, {batch_end=}")
             geo_json = download_features(url=url_chunk)
 
