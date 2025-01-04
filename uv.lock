@@ -250,6 +250,7 @@ version = "0.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "convertbng" },
+    { name = "filelock" },
     { name = "jupyterlab" },
     { name = "lxml" },
     { name = "numpy" },
@@ -278,6 +279,7 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "convertbng", specifier = ">=0.7.5" },
+    { name = "filelock", specifier = ">=3.16.1" },
     { name = "jupyterlab", specifier = ">=4.3.3" },
     { name = "lxml", specifier = ">=5.3.0" },
     { name = "numpy", specifier = ">=2.1.3" },
