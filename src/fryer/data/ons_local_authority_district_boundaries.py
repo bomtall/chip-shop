@@ -1,15 +1,15 @@
-import requests
 from pathlib import Path
 
 import geopandas as gpd
+import requests
 
 import fryer.data
 import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
-from fryer.typing import TypePathLike
 import fryer.transformer
+from fryer.typing import TypePathLike
 
 key = Path(__file__).stem
 

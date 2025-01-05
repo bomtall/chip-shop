@@ -5,7 +5,6 @@ from dotenv import dotenv_values
 
 from fryer.typing import TypePathLike
 
-
 __all__ = [
     "load",
     "get",

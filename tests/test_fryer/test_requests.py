@@ -4,9 +4,8 @@ import pytest
 import requests
 import requests_mock
 
-from fryer.requests import validate_response
 import fryer.logger
-
+from fryer.requests import validate_response
 
 KEY = Path(__file__).stem
 

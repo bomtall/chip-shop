@@ -1,8 +1,9 @@
-import pytest
 import numpy as np
 import polars as pl
-from fryer import transformer
+import pytest
 from polars.testing import assert_frame_equal
+
+from fryer import transformer
 
 np.random.seed(42)  # For reproducibility.
 

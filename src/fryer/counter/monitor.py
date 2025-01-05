@@ -1,17 +1,18 @@
-import sys
 import json
-import time
-import psutil
 import signal
-import threading
-import subprocess
 import socketserver
+import subprocess
+import sys
+import threading
+import time
 from http import server
 from pathlib import Path
 
-import fryer.path
-import fryer.logger
+import psutil
+
 import fryer.datetime
+import fryer.logger
+import fryer.path
 from fryer.typing import TypePathLike
 
 # close port manually: fuser -k 12669/tcp

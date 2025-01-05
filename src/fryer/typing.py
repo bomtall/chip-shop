@@ -2,7 +2,6 @@ import datetime
 from os import PathLike
 from pathlib import PurePath
 
-
 __all__ = [
     "TypePathLike",
     "TypeDatetimeLike",

@@ -1,5 +1,6 @@
+from typing import Callable, Dict, List, Optional
+
 import polars as pl
-from typing import Callable, List, Dict, Optional
 
 
 def process_date(df, date_column, format) -> pl.Expr:

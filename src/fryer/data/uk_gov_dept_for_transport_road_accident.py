@@ -1,8 +1,8 @@
-import requests
 from pathlib import Path
 
-import polars as pl
 import pandas as pd
+import polars as pl
+import requests
 from shapely.geometry import Point
 
 import fryer.data
@@ -10,9 +10,8 @@ import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
-from fryer.typing import TypePathLike
 import fryer.transformer
-
+from fryer.typing import TypePathLike
 
 guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"

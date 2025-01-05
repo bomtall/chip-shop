@@ -3,8 +3,8 @@ import datetime
 import pandas as pd
 import pytest
 
-from fryer.constants import FORMAT_ISO_DATE, FORMAT_YYYYMMDD_DATE, FRYER_ENV_TODAY
 import fryer.datetime
+from fryer.constants import FORMAT_ISO_DATE, FORMAT_YYYYMMDD_DATE, FRYER_ENV_TODAY
 
 
 @pytest.mark.parametrize(

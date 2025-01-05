@@ -8,12 +8,11 @@ import polars as pl
 import requests
 from tqdm.auto import tqdm
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
-from fryer.typing import TypePathLike, TypeDatetimeLike
-
+from fryer.constants import FORMAT_ISO_DATE
+from fryer.typing import TypeDatetimeLike, TypePathLike
 
 __all__ = [
     "KEY",

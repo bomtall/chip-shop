@@ -2,7 +2,6 @@ from logging import Logger
 
 import requests
 
-
 __all__ = ["validate_response"]
 
 

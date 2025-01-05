@@ -37,6 +37,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "black>=24.10.0",
+    "isort>=5.13.2",
     "lxml-stubs>=0.5.1",
     "mypy>=1.14.1",
     "pandas-stubs>=2.2.3.241126",
@@ -60,3 +61,6 @@ markers = [
     "integration: mark a test that needs external data sources.",
 ]
 addopts = "--cov=fryer --cov-report term-missing"
+
+[tool.isort]
+profile = "black"

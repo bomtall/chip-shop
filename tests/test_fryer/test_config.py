@@ -3,7 +3,6 @@ import pytest
 import fryer.config
 from fryer.constants import __all__ as FRYER_CONSTANTS
 
-
 ENV_KEYS = [item for item in FRYER_CONSTANTS if item.startswith("FRYER_ENV")]
 
 

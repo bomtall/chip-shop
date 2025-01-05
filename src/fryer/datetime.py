@@ -6,7 +6,6 @@ import fryer.config
 from fryer.constants import FRYER_ENV_TODAY
 from fryer.typing import TypeDatetimeLike, TypePathLike
 
-
 __all__ = ["validate_date", "today"]
 
 
