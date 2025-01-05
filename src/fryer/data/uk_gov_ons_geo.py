@@ -364,6 +364,7 @@ def write_raw(
     path_complete = path_all.parent / "complete"
     lock = FileLock(path_complete.with_suffix(".lock"))
     # TODO: check this works and make it a test - idea is to make sure only one thing writes to it
+    # Also not sure if this is worth doing, feels a bit like doing too much and not getting much out
     with lock:
         if path_complete.exists():
             logger.info(
