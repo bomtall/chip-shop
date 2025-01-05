@@ -1,8 +1,9 @@
 from pathlib import Path
+
 import pytest
 
-from fryer.constants import FRYER_ENV_PATH_LOG
 import fryer.logger
+from fryer.constants import FRYER_ENV_PATH_LOG
 
 
 @pytest.fixture

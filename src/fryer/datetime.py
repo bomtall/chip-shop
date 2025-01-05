@@ -6,7 +6,6 @@ import fryer.config
 from fryer.constants import FRYER_ENV_TODAY
 from fryer.typing import TypeDatetimeLike, TypePathLike
 
-
 __all__ = ["validate_date", "today"]
 
 
@@ -17,6 +16,10 @@ def validate_date(
     if isinstance(date, int):
         date = str(date)
     if format is not None:
+        if not isinstance(date, str):
+            raise ValueError(
+                f"{date=} has to be a string for converting to date with {format=}"
+            )
         date = datetime.datetime.strptime(date, format)
     return pd.Timestamp(date)
 
@@ -25,7 +28,7 @@ def today(
     *,
     override: TypeDatetimeLike | None = None,
     path_env: TypePathLike | None = None,
-    format: str = None,
+    format: str | None = None,
 ) -> pd.Timestamp:
     return validate_date(
         date=fryer.config.get(

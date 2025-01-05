@@ -1,12 +1,10 @@
 import datetime
-from os import PathLike
-from pathlib import PurePath
-
+from pathlib import Path
 
 __all__ = [
     "TypePathLike",
     "TypeDatetimeLike",
 ]
 
-TypePathLike = str | bytes | PathLike | PurePath
+TypePathLike = str | Path
 TypeDatetimeLike = str | int | datetime.datetime | datetime.date

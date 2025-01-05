@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import fryer.data.all
+import fryer.all
 
 
 def test_import():
@@ -9,4 +9,4 @@ def test_import():
     for path_module in path_modules:
         module = path_module.stem
         if path_module.suffix == ".py" and module not in {"all", "__init__"}:
-            assert module in fryer.data.all.__all__
+            assert module in fryer.all.__all__

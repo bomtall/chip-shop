@@ -6,12 +6,11 @@ from zipfile import ZipFile
 import polars as pl
 import requests
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
+from fryer.constants import FORMAT_ISO_DATE
 from fryer.typing import TypePathLike
-
 
 __all__ = [
     "KEY",
@@ -71,7 +70,7 @@ def get_map_from_zip_file(
     *,
     zip_file: ZipFile,
     file_name_to_search: str,
-    additional_map: dict[str, str],
+    additional_map: dict[str, str] | dict[None, str],
     all_keys: pl.Series | None = None,
     default_value: str | None = None,
     index_columns: Sequence[int] = (0, 1),

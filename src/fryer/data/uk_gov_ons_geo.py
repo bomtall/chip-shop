@@ -1,22 +1,21 @@
+import json
 from dataclasses import dataclass
 from enum import Enum
 from itertools import batched
-import json
 from pathlib import Path
 from typing import Any, TypedDict
 
-from filelock import FileLock
 import geopandas as gpd
 import pandas as pd
 import polars as pl
 import pyogrio
 import requests
-from tqdm.auto import tqdm
+from filelock import FileLock
+from tqdm import tqdm
 
 import fryer.logger
 import fryer.path
 from fryer.typing import TypePathLike
-
 
 __all__ = [
     "BoundariesType",

@@ -1,6 +1,5 @@
 import folium
 
-
 __all__ = ["create"]
 
 

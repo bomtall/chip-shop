@@ -1,6 +1,6 @@
 from fryer import (
-    constants,
     config,
+    constants,
     counter,
     data,
     datetime,

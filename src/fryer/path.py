@@ -4,7 +4,6 @@ import fryer.config
 from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 from fryer.typing import TypePathLike
 
-
 __all__ = ["log", "data"]
 
 

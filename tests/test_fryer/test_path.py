@@ -1,9 +1,9 @@
 from pathlib import Path
+
 import pytest
 
-
-from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 import fryer.path
+from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 
 
 @pytest.mark.parametrize(

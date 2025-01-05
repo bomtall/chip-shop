@@ -1,17 +1,18 @@
-import sys
 import json
-import time
-import psutil
 import signal
-import threading
-import subprocess
 import socketserver
+import subprocess
+import sys
+import threading
+import time
 from http import server
 from pathlib import Path
 
-import fryer.path
-import fryer.logger
+import psutil
+
 import fryer.datetime
+import fryer.logger
+import fryer.path
 from fryer.typing import TypePathLike
 
 # close port manually: fuser -k 12669/tcp
@@ -161,13 +162,12 @@ def main(
 
     try:
         address = ("", 12669)
-        global SERVER
-        SERVER = StreamingServer(address, StreamingHandler)
+        server = StreamingServer(address, StreamingHandler)
         print("Server started")
         logger.info(f"Server started on port {address[1]}")
         signal.signal(signal.SIGINT, signal_handler)
         while not shutdown_event.is_set():
-            SERVER.handle_request()
+            server.handle_request()
     finally:
         y.join()
 

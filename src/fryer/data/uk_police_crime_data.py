@@ -6,14 +6,13 @@ from zipfile import ZipFile
 import pandas as pd
 import polars as pl
 import requests
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
-from fryer.typing import TypePathLike, TypeDatetimeLike
-
+from fryer.constants import FORMAT_ISO_DATE
+from fryer.typing import TypeDatetimeLike, TypePathLike
 
 __all__ = [
     "KEY",
@@ -289,9 +288,9 @@ def write_street(
         )
         return
 
-    for date_start, date_end in RAW_DOWNLOAD_INFO.keys():
-        date_start = fryer.datetime.validate_date(date=date_start)
-        date_end = fryer.datetime.validate_date(date=date_end)
+    for date_start_, date_end_ in RAW_DOWNLOAD_INFO.keys():
+        date_start = fryer.datetime.validate_date(date=date_start_)
+        date_end = fryer.datetime.validate_date(date=date_end_)
         if date_start <= month <= date_end:
             break
     else:

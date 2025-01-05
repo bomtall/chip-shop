@@ -1,20 +1,19 @@
-import pytest
 import numpy as np
 import polars as pl
-from fryer import transformer
+import pytest
 from polars.testing import assert_frame_equal
+
+from fryer import transformer
 
 np.random.seed(42)  # For reproducibility.
 
 
 @pytest.mark.parametrize(
-    "args,kwargs,expected",
+    "df,args,kwargs,expected",
     [
         (
+            pl.DataFrame({"dates": ["01/01/2024", "10/10/2024", "25/12/2025", "", ""]}),
             [
-                pl.DataFrame(
-                    {"dates": ["01/01/2024", "10/10/2024", "25/12/2025", "", ""]}
-                ),
                 "dates",
                 "%d/%m/%Y",
             ],
@@ -22,10 +21,10 @@ np.random.seed(42)  # For reproducibility.
             [pl.Date, 2],
         ),
         (
+            pl.DataFrame(
+                {"dates": ["01/01/2024", "10/10/2024", "25/12/2025", None, ""]}
+            ),
             [
-                pl.DataFrame(
-                    {"dates": ["01/01/2024", "10/10/2024", "25/12/2025", None, ""]}
-                ),
                 "dates",
                 "%d/%m/%Y",
             ],
@@ -33,18 +32,18 @@ np.random.seed(42)  # For reproducibility.
             [pl.Date, 2],
         ),
         (
+            pl.DataFrame(
+                {
+                    "dates": [
+                        "2024/01/01",
+                        "2024/10/10",
+                        "2025/12/25",
+                        "2025/12/25",
+                        "",
+                    ]
+                }
+            ),
             [
-                pl.DataFrame(
-                    {
-                        "dates": [
-                            "2024/01/01",
-                            "2024/10/10",
-                            "2025/12/25",
-                            "2025/12/25",
-                            "",
-                        ]
-                    }
-                ),
                 "dates",
                 "%Y/%m/%d",
             ],
@@ -52,46 +51,46 @@ np.random.seed(42)  # For reproducibility.
             [pl.Date, 1],
         ),
         (
+            pl.DataFrame(
+                {
+                    "dates": [
+                        "2024/01/01",
+                        "2024/10/10",
+                        "2025/12/25",
+                        "2025/12/25",
+                        "",
+                    ]
+                }
+            ),
             [],
             dict(
-                df=pl.DataFrame(
-                    {
-                        "dates": [
-                            "2024/01/01",
-                            "2024/10/10",
-                            "2025/12/25",
-                            "2025/12/25",
-                            "",
-                        ]
-                    }
-                ),
                 date_column="dates",
                 format="%Y/%m/%d",
             ),
             [pl.Date, 1],
         ),
         (
+            pl.DataFrame(
+                {
+                    "dates": [
+                        "2024/01/01",
+                        "2024/10/10",
+                        "2025/12/25",
+                        "2025/12/25",
+                        "null",
+                    ]
+                }
+            ),
             [],
             dict(
-                df=pl.DataFrame(
-                    {
-                        "dates": [
-                            "2024/01/01",
-                            "2024/10/10",
-                            "2025/12/25",
-                            "2025/12/25",
-                            "null",
-                        ]
-                    }
-                ),
                 date_column="dates",
                 format="%Y/%m/%d",
             ),
             [pl.Date, 1],
         ),
         (
+            pl.DataFrame({"dates": [None, "10/10/2024", "", "null", "None"]}),
             [
-                pl.DataFrame({"dates": [None, "10/10/2024", "", "null", "None"]}),
                 "dates",
                 "%d/%m/%Y",
             ],
@@ -99,8 +98,8 @@ np.random.seed(42)  # For reproducibility.
             [pl.Date, 4],
         ),
         (
+            pl.DataFrame({"dates": [None, "10/10/2024", "", "NULL", "None"]}),
             [
-                pl.DataFrame({"dates": [None, "10/10/2024", "", "NULL", "None"]}),
                 "dates",
                 "%d/%m/%Y",
             ],
@@ -108,18 +107,18 @@ np.random.seed(42)  # For reproducibility.
             [pl.Date, 4],
         ),
         (
+            pl.DataFrame(
+                {
+                    "dates": [
+                        "10/10/2024",
+                        "30/10/2024",
+                        "28/02/2024",
+                        "NULL",
+                        "NONE",
+                    ]
+                }
+            ),
             [
-                pl.DataFrame(
-                    {
-                        "dates": [
-                            "10/10/2024",
-                            "30/10/2024",
-                            "28/02/2024",
-                            "NULL",
-                            "NONE",
-                        ]
-                    }
-                ),
                 "dates",
                 "%d/%m/%Y",
             ],
@@ -128,16 +127,13 @@ np.random.seed(42)  # For reproducibility.
         ),
     ],
 )
-def test_process_date(args, kwargs, expected):
+def test_process_date(df, args, kwargs, expected):
     expr = transformer.process_date(*args, **kwargs)
     assert isinstance(expr, pl.Expr)
     print(len(args))
-    if args:
-        df = args[0].with_columns(expr)
-    else:
-        df = kwargs["df"].with_columns(expr)
-    assert df["dates"].dtype == expected[0]
-    assert df.null_count()["dates"][0] == expected[1]
+    new_df = df.with_columns(expr)
+    assert new_df["dates"].dtype == expected[0]
+    assert new_df.null_count()["dates"][0] == expected[1]
 
 
 @pytest.mark.parametrize(

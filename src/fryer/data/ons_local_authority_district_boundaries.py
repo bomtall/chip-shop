@@ -1,15 +1,15 @@
-import requests
 from pathlib import Path
 
 import geopandas as gpd
+import requests
 
 import fryer.data
 import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
-from fryer.typing import TypePathLike
 import fryer.transformer
+from fryer.typing import TypePathLike
 
 key = Path(__file__).stem
 
@@ -53,7 +53,7 @@ def read(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> gpd.GeoDataFrame:
     path_file = get_latest_file(
         path_log=path_log, path_data=path_data, path_env=path_env
     )

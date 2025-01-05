@@ -1,6 +1,6 @@
-from pathlib import Path
 from io import BytesIO
-from zipfile import is_zipfile, ZipFile
+from pathlib import Path
+from zipfile import ZipFile, is_zipfile
 
 import polars as pl
 import requests
@@ -11,7 +11,6 @@ import fryer.logger
 import fryer.path
 import fryer.requests
 from fryer.typing import TypePathLike
-
 
 __all__ = [
     "KEY",
