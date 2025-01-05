@@ -6,11 +6,15 @@ from polars.datatypes.classes import DataTypeClass
 from fryer.typing import TypePathLike
 
 
-def process_date(date_column, format) -> pl.Expr:
+def process_date(date_column: str, format: str) -> pl.Expr:
     return pl.col(date_column).str.to_date(format, strict=False)
 
 
-def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr:
+def get_column_map_expression(
+    df: pl.DataFrame,
+    field_name: str,
+    remove_minus_one: bool = False,
+) -> pl.Expr:
     """
     Get the column mapping for a given field name from the dataset guide and return polars expression.
     """
