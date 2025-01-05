@@ -38,7 +38,7 @@ done
 
 if [ -n "$username" ]; then
     useradd -m -d "/home/$username" -s /bin/bash "$username"
-    usermod -aG hdd-data-read "$username"
+    usermod -aG hdd-data-read,hdd-code-read "$username"
     echo "$username:$username" | sudo chpasswd
 
     echo "user created: $username"
