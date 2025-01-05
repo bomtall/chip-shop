@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import Any, TypedDict
 
 from filelock import FileLock
+import geopandas as gpd
+import pandas as pd
 import polars as pl
+import pyogrio
 import requests
 from tqdm.auto import tqdm
 
@@ -345,7 +348,7 @@ def download_features(
         raise ValueError(f"Exceeded transfer limit for {url=}")
     if "error" in data.keys():
         raise ValueError(f"{data}, {url=!s}")
-    return data["features"]
+    return data
 
 
 def write_raw(
@@ -426,6 +429,30 @@ def write_raw_all(
             path_data=path_data,
             path_env=path_env,
         )
+
+
+def read_raw(
+    boundaries_type: BoundariesType,
+    *,
+    path_log: TypePathLike | None = None,
+    path_data: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> gpd.GeoDataFrame:
+    path_all = path_raw(
+        boundaries_type=boundaries_type,
+        path_data=path_data,
+        path_env=path_env,
+    )
+    logger = fryer.logger.get(
+        key=boundaries_type.key, path_log=path_log, path_env=path_env
+    )
+    logger.info(f"Reading from {path_all!s}")
+    # This is currently necessary for the read to work
+    pyogrio.set_gdal_config_options({"OGR_GEOJSON_MAX_OBJ_SIZE": 0})
+    return pd.concat(
+        [gpd.read_file(path) for path in tqdm(path_all.parent.glob(path_all.name))],
+        ignore_index=True,
+    ).pipe(gpd.GeoDataFrame)
 
 
 def main():

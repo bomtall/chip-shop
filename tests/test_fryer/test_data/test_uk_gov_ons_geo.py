@@ -34,3 +34,12 @@ def test_write_raw(boundaries_type, temp_dir):
         path_data=temp_dir,
     )
     assert (path.parent / "complete").exists()
+
+
+@pytest.mark.integration
+def test_read_raw(temp_dir):
+    gdf = fryer.data.uk_gov_ons_geo.read_raw(
+        boundaries_type=fryer.data.uk_gov_ons_geo.BoundariesType.CTRY_DEC_2023_UK_BFC,
+        path_log=temp_dir,
+    )
+    assert len(gdf) == 4
