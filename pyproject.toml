@@ -37,8 +37,14 @@ dependencies = [
 [dependency-groups]
 dev = [
     "black>=24.10.0",
+    "lxml-stubs>=0.5.1",
+    "mypy>=1.14.1",
+    "pandas-stubs>=2.2.3.241126",
     "pre-commit>=4.0.1",
     "ruff>=0.8.0",
+    "tqdm-stubs>=0.2.1",
+    "types-psutil>=6.1.0.20241221",
+    "types-requests>=2.32.0.20241016",
 ]
 test = [
     "pytest-cov>=6.0.0",
