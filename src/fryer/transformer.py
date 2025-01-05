@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, Optional
+from typing import Callable
 
 import polars as pl
 
@@ -26,15 +26,15 @@ def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr
 
 
 def process_data(
-    file_path: str = None,
-    file_type: str = None,
+    file_path: str | None = None,
+    file_type: str | None = None,
     data: dict | list = None,
-    date_formats: Optional[Dict[str, str]] = None,
-    schema: Optional[Dict[str, pl.DataType]] = None,
-    column_names: Optional[Dict[str, str]] = None,
-    column_operations: Optional[Dict[str, pl.Expr]] = None,
-    df_operations: Optional[List[Callable]] = None,
-    enum_column_maps: Optional[pl.DataFrame] = pl.DataFrame(),
+    date_formats: dict[str, str] | None = None,
+    schema: dict[str, pl.DataType] | None = None,
+    column_names: dict[str, str] | None = None,
+    column_operations: dict[str, pl.Expr] | None = None,
+    df_operations: list[Callable] | None = None,
+    enum_column_maps: pl.DataFrame | None = None,
     remove_minus_one: bool = False,
 ) -> pl.DataFrame:
     """
@@ -52,6 +52,9 @@ def process_data(
     Returns:
     - A Polars DataFrame after applying all transformations and operations.
     """
+
+    if enum_column_maps is None:
+        enum_column_maps = pl.DataFrame()
 
     # Load the data based on the file type or iterable
     if file_path:

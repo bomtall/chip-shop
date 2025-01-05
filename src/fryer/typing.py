@@ -7,5 +7,5 @@ __all__ = [
     "TypeDatetimeLike",
 ]
 
-TypePathLike = str | bytes | PathLike | PurePath
+TypePathLike = str | PathLike | PurePath
 TypeDatetimeLike = str | int | datetime.datetime | datetime.date
