@@ -129,7 +129,13 @@ np.random.seed(42)  # For reproducibility.
     ],
 )
 def test_process_date(args, kwargs, expected):
-    df = transformer.process_date(*args, **kwargs)
+    expr = transformer.process_date(*args, **kwargs)
+    assert isinstance(expr, pl.Expr)
+    print(len(args))
+    if args:
+        df = args[0].with_columns(expr)
+    else:
+        df = kwargs["df"].with_columns(expr)
     assert df["dates"].dtype == expected[0]
     assert df.null_count()["dates"][0] == expected[1]
 
@@ -144,14 +150,64 @@ def test_process_date(args, kwargs, expected):
                     "nrs": [1, None, 3, "null", 5],
                     "names": ["foo", 234, "spam", "egg", ""],
                     "random": list(np.random.rand(3)) + [None, "NULL"],
-                    "groups": ["A", "A", "B", "", "null"],
+                    "groups": [1, 1, 2, 2, 2],
                     "dates": ["01/01/2024", "10/10/2024", "25/12/2025", "None", ""],
                 },
                 schema={
                     "nrs": pl.Int32,
                     "names": pl.String,
                     "random": pl.Float32,
-                    "groups": pl.Categorical,
+                    "groups": pl.Enum,
+                    "dates": pl.Date,
+                },
+                date_formats={"dates": "%d/%m/%Y"},
+                column_names={
+                    "nrs": "Numbers",
+                    "names": "Names",
+                    "random": "Random",
+                    "groups": "Groups",
+                    "dates": "Dates",
+                },
+                enum_column_maps=pl.DataFrame(
+                    {
+                        "field name": ["groups"] * 2,
+                        "code/format": [1, 2],
+                        "label": ["A", "B"],
+                    }
+                ),
+            ),
+            {
+                "schema": {
+                    "Numbers": pl.Int32,
+                    "Names": pl.String,
+                    "Random": pl.Float32,
+                    "Groups": pl.Enum,
+                    "Dates": pl.Date,
+                },
+                "null_counts": {
+                    "Numbers": 2,
+                    "Names": 1,
+                    "Random": 2,
+                    "Groups": 0,
+                    "Dates": 2,
+                },
+            },
+        ),
+        (
+            [],
+            dict(
+                data={
+                    "nrs": [1, None, 3, "null", 5],
+                    "names": ["foo", 234, "spam", "egg", ""],
+                    "random": list(np.random.rand(3)) + [None, "NULL"],
+                    "groups": ["A", "A", "B", "A", "C"],
+                    "dates": ["01/01/2024", "10/10/2024", "25/12/2025", "None", ""],
+                },
+                schema={
+                    "nrs": pl.Int32,
+                    "names": pl.String,
+                    "random": pl.Float32,
+                    "groups": pl.Enum,
                     "dates": pl.Date,
                 },
                 date_formats={"dates": "%d/%m/%Y"},
@@ -168,14 +224,14 @@ def test_process_date(args, kwargs, expected):
                     "Numbers": pl.Int32,
                     "Names": pl.String,
                     "Random": pl.Float32,
-                    "Groups": pl.Categorical,
+                    "Groups": pl.Enum,
                     "Dates": pl.Date,
                 },
                 "null_counts": {
                     "Numbers": 2,
                     "Names": 1,
                     "Random": 2,
-                    "Groups": 2,
+                    "Groups": 0,
                     "Dates": 2,
                 },
             },
