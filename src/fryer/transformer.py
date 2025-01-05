@@ -1,9 +1,12 @@
 from typing import Callable
 
 import polars as pl
+from polars.datatypes.classes import DataTypeClass
+
+from fryer.typing import TypePathLike
 
 
-def process_date(df, date_column, format) -> pl.Expr:
+def process_date(date_column, format) -> pl.Expr:
     return pl.col(date_column).str.to_date(format, strict=False)
 
 
@@ -26,11 +29,11 @@ def get_column_map_expression(df, field_name, remove_minus_one=False) -> pl.Expr
 
 
 def process_data(
-    file_path: str | None = None,
+    file_path: TypePathLike | None = None,
     file_type: str | None = None,
-    data: dict | list = None,
+    data: dict | list | None = None,
     date_formats: dict[str, str] | None = None,
-    schema: dict[str, pl.DataType] | None = None,
+    schema: dict[str, DataTypeClass] | None = None,
     column_names: dict[str, str] | None = None,
     column_operations: dict[str, pl.Expr] | None = None,
     df_operations: list[Callable] | None = None,
@@ -53,6 +56,9 @@ def process_data(
     - A Polars DataFrame after applying all transformations and operations.
     """
 
+    if date_formats is None:
+        date_formats = {}
+
     if enum_column_maps is None:
         enum_column_maps = pl.DataFrame()
 
@@ -72,7 +78,7 @@ def process_data(
     if schema:
         for col, dtype in schema.items():
             if dtype == pl.Date:
-                exprs.append(process_date(df, col, date_formats[col]))
+                exprs.append(process_date(col, date_formats[col]))
             elif dtype in [pl.Categorical, pl.String]:
                 exprs.append(
                     pl.col(col)
@@ -127,7 +133,7 @@ def process_data(
 
     # Apply columnar transformations (if provided)
     if column_operations:
-        if all([isinstance(x, pl.Expr) for x in column_operations.values()]):
+        if all(isinstance(x, pl.Expr) for x in column_operations.values()):
             df = df.with_columns(**column_operations)
         else:
             raise ValueError("Unsupported transform types")

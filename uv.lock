@@ -292,6 +292,7 @@ dev = [
     { name = "tqdm-stubs" },
     { name = "types-psutil" },
     { name = "types-requests" },
+    { name = "types-shapely" },
 ]
 test = [
     { name = "pytest" },
@@ -332,6 +333,7 @@ dev = [
     { name = "tqdm-stubs", specifier = ">=0.2.1" },
     { name = "types-psutil", specifier = ">=6.1.0.20241221" },
     { name = "types-requests", specifier = ">=2.32.0.20241016" },
+    { name = "types-shapely", specifier = ">=2.0.0.20241221" },
 ]
 test = [
     { name = "pytest", specifier = ">=8.3.3" },
@@ -2000,6 +2002,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/fa/3c/4f2a430c01a22abd49a583b6b944173e39e7d01b688190a5618bd59a2e22/types-requests-2.32.0.20241016.tar.gz", hash = "sha256:0d9cad2f27515d0e3e3da7134a1b6f28fb97129d86b867f24d9c726452634d95", size = 18065 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d7/01/485b3026ff90e5190b5e24f1711522e06c79f4a56c8f4b95848ac072e20f/types_requests-2.32.0.20241016-py3-none-any.whl", hash = "sha256:4195d62d6d3e043a4eaaf08ff8a62184584d2e8684e9d2aa178c7915a7da3747", size = 15836 },
+]
+
+[[package]]
+name = "types-shapely"
+version = "2.0.0.20241221"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/cc/2b/1ff0af3732aef0119ab0d8d14a68f944b45095a7afbd9880b822dc121280/types_shapely-2.0.0.20241221.tar.gz", hash = "sha256:eca668aab76468c9926f3ba45e096ecd3283abae1ad43e901787f5b3c77ed81e", size = 24875 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/08/20/8aba2789782b226381ffaaa400c19ff4343ef45c0b00f494c22bc78a54c1/types_shapely-2.0.0.20241221-py3-none-any.whl", hash = "sha256:eadfd4fc2b732790c9ac03949e278078be6cc65c2354016788ed62f4b9fba700", size = 36316 },
 ]
 
 [[package]]

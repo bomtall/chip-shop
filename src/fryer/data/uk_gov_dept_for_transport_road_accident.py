@@ -30,7 +30,7 @@ __all__ = [
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
 
-date_formats = {
+DATE_FORMATS = {
     "vehicle": {},
     "collision": {
         "date": "%d/%m/%Y",
@@ -39,7 +39,7 @@ date_formats = {
     "casualty": {},
 }
 
-schemas = {
+SCHEMAS = {
     "vehicle": {
         "accident_index": pl.String,
         "accident_year": pl.Int32,
@@ -139,12 +139,12 @@ schemas = {
     },
 }
 
-transformations = {
+TRANSFORMATIONS = {
     "vehicle": {"age_of_driver": pl.col("age_of_driver").replace(-1, None)},
     "collision": {
         "severity": pl.when(
             pl.col("accident_severity") == "Serious",
-            ~pl.col("enhanced_severity_collision").is_null(),
+            pl.col("enhanced_severity_collision").is_not_null(),
         )
         .then(
             pl.concat_str(
@@ -154,7 +154,7 @@ transformations = {
         )
         .otherwise(pl.col("accident_severity").alias("severity"))
     },
-    "casualty": [],
+    "casualty": {},
 }
 
 
@@ -268,18 +268,19 @@ def derive(
         df = fryer.transformer.process_data(
             file_path=path,
             file_type="csv",
-            schema=schemas[dataset],
-            column_operations=transformations[dataset],
+            schema=SCHEMAS[dataset],
+            column_operations=TRANSFORMATIONS[dataset],
             df_operations=None,
             remove_minus_one=True,
             enum_column_maps=info_df,
-            date_formats=date_formats[dataset],
+            date_formats=DATE_FORMATS[dataset],
         )
 
         if dataset == "collision":
             for row in df.iter_rows():
                 if row[15] in [None, -1, "-1"] and row[5] and row[6]:
-                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][
+                    # TODO: figure out if this is actually working
+                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][  # type: ignore
                         "LAD24CD"
                     ]
 
@@ -294,7 +295,7 @@ def derive(
         )
 
 
-def create_column_rename_dict(df, format) -> pl.DataFrame:
+def create_column_rename_dict(df, format) -> dict[str, str]:
     column_names = {}
     if format == "title":
         for col in df.columns:
@@ -323,7 +324,7 @@ def read(
         if path.stem in datasets_to_read
     }
 
-    for dataset, cols in schemas.items():
+    for dataset, cols in SCHEMAS.items():
         for col, dtype in cols.items():
             if dtype == pl.Time and dataset in datasets_to_read:
                 dfs[dataset] = dfs[dataset].with_columns(

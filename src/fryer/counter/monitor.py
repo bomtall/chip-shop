@@ -162,13 +162,12 @@ def main(
 
     try:
         address = ("", 12669)
-        global SERVER
-        SERVER = StreamingServer(address, StreamingHandler)
+        server = StreamingServer(address, StreamingHandler)
         print("Server started")
         logger.info(f"Server started on port {address[1]}")
         signal.signal(signal.SIGINT, signal_handler)
         while not shutdown_event.is_set():
-            SERVER.handle_request()
+            server.handle_request()
     finally:
         y.join()
 

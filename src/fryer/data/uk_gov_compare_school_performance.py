@@ -4,7 +4,7 @@ from pathlib import Path
 import lxml.html
 import pandas as pd
 import requests
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
 import fryer.datetime
 import fryer.logger

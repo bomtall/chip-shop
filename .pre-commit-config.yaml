@@ -22,10 +22,14 @@ repos:
        args: [ --fix ]
      - id: ruff-format
        name: ruff-format
-       entry: uv run ruff format
        language: system
+       entry: uv run ruff format
        types_or: [ python, pyi, jupyter ]
-
+     - id: mypy
+       name: mypy
+       language: system
+       entry: uv run mypy
+       types_or: [ python ]
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
@@ -46,10 +50,10 @@ repos:
   #   hooks:
   #     - id: isort
   #       name: isort (python)
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.14.1
-    hooks:
-      - id: mypy
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v1.14.1
+  #   hooks:
+  #     - id: mypy
   - repo: https://github.com/astral-sh/uv-pre-commit
     # uv version.
     rev: 0.5.5

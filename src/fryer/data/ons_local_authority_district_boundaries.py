@@ -53,7 +53,7 @@ def read(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> gpd.GeoDataFrame:
     path_file = get_latest_file(
         path_log=path_log, path_data=path_data, path_env=path_env
     )
