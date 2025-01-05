@@ -37,4 +37,5 @@ uv run python "${CHIP_SHOP_DIR}/src/fryer/data/uk_gov_hm_land_registry_price_pai
 uv run python "${CHIP_SHOP_DIR}/src/fryer/data/uk_gov_compare_school_performance.py"
 uv run python "${CHIP_SHOP_DIR}/src/fryer/data/uk_gov_ons_postcode_directory.py"
 uv run python "${CHIP_SHOP_DIR}/src/fryer/data/uk_police_crime_data.py"
-uv run python "${CHIP_SHOP_DIR}/src/fryer/data/os_codepoint_postcodes.py"
+uv run python "${CHIP_SHOP_DIR}/src/fryer/data/os_codepoint_postcode.py"
+uv run python "${CHIP_SHOP_DIR}/src/fryer/data/uk_gov_dept_for_transport_road_accident.py"

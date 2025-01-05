@@ -64,15 +64,20 @@ sudo systemctl enable containerd.service
 
 DATA_DIR="/media/linkside/hdd/data"
 SCRATCH_DIR="/media/linkside/hdd/scratch"
+CODE_DIR="/media/linkside/hdd/code"
 
 sudo chown root:root /media/linkside/hdd
 sudo chmod 755 /media/linkside/hdd
 
 log_info "creating data area on HDD"
-
 mkdir -p "$DATA_DIR"
 sudo chown -R "$USER" "$DATA_DIR"
 chmod 770 "$DATA_DIR"
+
+log_info "creating code area on HDD"
+mkdir -p "$CODE_DIR"
+sudo chown -R "$USER" "$CODE_DIR"
+chmod 770 "$CODE_DIR"
 
 log_info "creating scratch area on HDD"
 mkdir -p "$SCRATCH_DIR"
@@ -84,8 +89,22 @@ usermod -aG hdd-data-read "$USER"
 sudo setfacl -m g:hdd-data-read:rx "$DATA_DIR"
 sudo setfacl -d -m g:hdd-data-read:rx "$DATA_DIR"   # Default ACL for future files
 
+
 log_info "creating user group hdd-data-write"
 groupadd -f hdd-data-write
 usermod -aG hdd-data-write "$USER"
 sudo setfacl -m g:hdd-data-write:rwx "$DATA_DIR"
-sudo setfacl -d -m g:hdd-data-write:rwx "$DATA_DIR"  # Default ACL for future files
+sudo setfacl -d -m g:hdd-data-write:rwx "$DATA_DIR"
+
+log_info "creating user group hdd-code-read"
+groupadd -f hdd-code-read
+usermod -aG hdd-code-read "$USER"
+sudo setfacl -m g:hdd-code-read:rx "$CODE_DIR"
+sudo setfacl -d -m g:hdd-code-read:rx "$CODE_DIR"
+
+
+log_info "creating user group hdd-code-write"
+groupadd -f hdd-code-write
+usermod -aG hdd-code-write "$USER"
+sudo setfacl -m g:hdd-code-write:rwx "$CODE_DIR"
+sudo setfacl -d -m g:hdd-code-write:rwx "$CODE_DIR"
