@@ -176,12 +176,12 @@ class BoundariesType(Enum):
         url_about="https://geoportal.statistics.gov.uk/datasets/ons::european-electoral-regions-december-2018-boundaries-uk-bfc/about",
     )
 
-    # # Grid
-    # GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom = BoundariesData(
-    #     name_short="",
-    #     url_key="GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom_2022",
-    #     url_about="https://geoportal.statistics.gov.uk/datasets/ons::geostat-december-2011-boundaries-uk-bge-2/about",
-    # )
+    # Grid
+    GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom = BoundariesData(
+        name_short="grd_fixid",
+        url_key="GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::geostat-december-2011-boundaries-uk-bge-2/about",
+    )
 
     # OECD / Eurostat
     ITL1_MAY_2021_UK_BFC = BoundariesData(
