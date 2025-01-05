@@ -3,6 +3,7 @@ from fryer.data import (
     os_codepoint_postcode,
     uk_gov_compare_school_performance,
     uk_gov_hm_land_registry_price_paid,
+    uk_gov_ons_geo,
     uk_gov_ons_postcode_directory,
     uk_gov_dept_for_transport_road_accident,
     uk_police_crime_data,
@@ -14,6 +15,7 @@ __all__ = [
     "uk_gov_compare_school_performance",
     "uk_gov_dept_for_transport_road_accident",
     "uk_gov_hm_land_registry_price_paid",
+    "uk_gov_ons_geo",
     "uk_gov_ons_postcode_directory",
     "uk_police_crime_data",
 ]
