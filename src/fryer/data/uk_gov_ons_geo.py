@@ -405,6 +405,7 @@ def write_raw(
             geo_json = download_features(url=url_chunk)
 
             logger.info(f"Writing geojson to {path_chunk!s}")
+            # Could zip this in the future
             path_chunk.write_text(json.dumps(geo_json, indent="  "))
 
         path_complete.touch()
