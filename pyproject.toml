@@ -68,7 +68,7 @@ profile = "black"
 
 [[tool.mypy.overrides]]
 # No stubs for these packages
-module = "geopandas.*,pyogrio.*,convertbng.util.*"
+module = "geopandas.*,pyogrio.*,convertbng.util.*,fryer.*"
 ignore_missing_imports = true
 
 # [tool.ruff.lint]
