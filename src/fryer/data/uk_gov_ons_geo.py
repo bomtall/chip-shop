@@ -45,45 +45,184 @@ class BoundariesData:
     name_short: str
     url_key: str
     url_about: str
-    server_type: str
+    max_query_records: int = MAX_QUERY_RECORDS
 
 
 class BoundariesType(Enum):
-    # Explanation:
+    # Explanation (assuming B is for boundaries):
     # - BFE - Full resolution, extent of the realm (usually this is the Mean Low Water mark but in some cases boundaries extend beyond this to include off shore islands)
     # - BFC - Full resolution - clipped to the coastline (Mean High Water mark)
     # - BGC - Generalised (20m) - clipped to the coastline (Mean High Water mark)
-    # - BSC - Super generalised (200m) - clipped to the coastline (1 MB)
-    # - BUC - Ultra generalised (500m) - clipped to the coastline (Mean High Water mark).
-    OA_2021_EW_BFC_V8 = BoundariesData(
-        name_short="OA21",
-        url_key="Output_Areas_2021_EW_BFC_V8",
-        url_about="https://geoportal.statistics.gov.uk/datasets/ons::output-areas-december-2021-boundaries-ew-bfc-v8/about",
-        server_type="FeatureServer",
+    # - BGG - Generalised Grid (50m) - clipped to the coastline (Mean High Water mark)
+    # - BSC - Super generalised (200m) - clipped to the coastline (Mean High Water mark)
+    # - BUC - Ultra generalised (500m) - clipped to the coastline (Mean High Water mark)
+
+    # Administrative
+    CAUTH_MAY_2024_EN_BFC = BoundariesData(
+        name_short="CAUTH24",
+        url_key="Combined_Authorities_May_2023_Boundaries_EN_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::combined-authorities-latest-boundaries-en-bfc/about",
     )
-    LSOA_2021_EW_BFC_V10 = BoundariesData(
-        name_short="LSOA21",
-        url_key="Lower_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V10",
-        url_about="https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bfc-v10-2/about",
-        server_type="FeatureServer",
+    CTY_DEC_2023_EN_BFC = BoundariesData(
+        name_short="CTY23",
+        url_key="Counties_December_2023_Boundaries_EN_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::counties-december-2023-boundaries-en-bfc-2/about",
     )
-    MSOA_2021_EW_BFC_V7 = BoundariesData(
-        name_short="MSOA21",
-        url_key="Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7",
-        url_about="https://geoportal.statistics.gov.uk/datasets/ons::middle-layer-super-output-areas-december-2021-boundaries-ew-bfc-v7-2/about",
-        server_type="FeatureServer",
-    )
-    TTWA_2011_UK_BFC_V2 = BoundariesData(
-        name_short="TTWA11",
-        url_key="Travel_to_Work_Areas_Dec_2011_FCB_in_United_Kingdom_2022",
-        url_about="https://geoportal.statistics.gov.uk/datasets/ons::travel-to-work-areas-december-2011-boundaries-uk-bfc-v2/about",
-        server_type="FeatureServer",
+    CTYUA_DEC_2023_UK_BFC = BoundariesData(
+        name_short="CTYUA23",
+        url_key="Counties_and_Unitary_Authorities_December_2023_Boundaries_UK_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::counties-and-unitary-authorities-december-2023-boundaries-uk-bfc-2/about",
     )
     CTRY_DEC_2023_UK_BFC = BoundariesData(
         name_short="CTRY23",
         url_key="Countries_December_2023_Boundaries_UK_BFC",
         url_about="https://geoportal.statistics.gov.uk/datasets/ons::countries-december-2023-boundaries-uk-bfc-2/about",
-        server_type="FeatureServer",
+    )
+    CED_MAY_2023_EN_BFC_V2 = BoundariesData(
+        name_short="CED23",
+        url_key="County_Electoral_Division_May_2023_Boundaries_EN_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::county-electoral-division-may-2023-boundaries-en-bfc-2/about",
+    )
+    LAD_MAY_2024_UK_BFC = BoundariesData(
+        name_short="LAD24",
+        url_key="Local_Authority_Districts_May_2024_Boundaries_UK_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::local-authority-districts-may-2024-boundaries-uk-bfc-2/about",
+        max_query_records=50,
+    )
+    LPA_APR_2023_UK_BFC = BoundariesData(
+        name_short="LPA23",
+        url_key="Local_Planning_Authorities_April_2023_Boundaries_UK_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::local-planning-authorities-april-2023-boundaries-uk-bfc-2/about",
+        max_query_records=50,
+    )
+    PAR_MAY_2023_EW_BFC = BoundariesData(
+        name_short="PAR23",
+        url_key="Parishes_May_2023_Boundaries_EW_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::parishes-may-2023-boundaries-ew-bfc-2/about",
+    )
+    PARNCP_DEC_2023_EW_BFC_V2 = BoundariesData(
+        name_short="PARNCP23",
+        url_key="Parishes_and_Non_Civil_Parished_Areas_December_2023_Boundaries_EW_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::parishes-and-non-civil-parished-areas-december-2023-boundaries-ew-bfc-2/about",
+    )
+    RGN_DEC_2023_EN_BFC = BoundariesData(
+        name_short="RGN23",
+        url_key="Regions_December_2023_Boundaries_EN_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::regions-december-2023-boundaries-en-bfc-2/about",
+    )
+    UTLA_MCTY_DEC_2022_UK_BFC = BoundariesData(
+        name_short="UTLA22",
+        url_key="Upper_Tier_Local_Authorities_December_2022_Boundaries_UK_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::upper-tier-local-authorities-inc-metropolitan-counties-december-2022-boundaries-uk-bfc-2/about",
+    )
+    WD_MAY_2024_UK_BFC = BoundariesData(
+        name_short="WD24",
+        url_key="Wards_May_2024_Boundaries_UK_BFE",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::wards-may-2024-boundaries-uk-bfc-2/about",
+    )
+
+    # Census 2021
+    OA_2021_EW_BFC_V8 = BoundariesData(
+        name_short="OA21",
+        url_key="Output_Areas_2021_EW_BFC_V8",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::output-areas-december-2021-boundaries-ew-bfc-v8/about",
+    )
+    LSOA_2021_EW_BFC_V10 = BoundariesData(
+        name_short="LSOA21",
+        url_key="Lower_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V10",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::lower-layer-super-output-areas-december-2021-boundaries-ew-bfc-v10-2/about",
+    )
+    MSOA_2021_EW_BFC_V7 = BoundariesData(
+        name_short="MSOA21",
+        url_key="Middle_layer_Super_Output_Areas_December_2021_Boundaries_EW_BFC_V7",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::middle-layer-super-output-areas-december-2021-boundaries-ew-bfc-v7-2/about",
+    )
+    TTWA_2011_UK_BFC_V2 = BoundariesData(
+        name_short="TTWA11",
+        url_key="Travel_to_Work_Areas_Dec_2011_FCB_in_United_Kingdom_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::travel-to-work-areas-december-2011-boundaries-uk-bfc-v2/about",
+    )
+    Workplace_Zones_Dec_2011_FCB_in_England_and_Wales = BoundariesData(
+        name_short="wz11",
+        url_key="Workplace_Zones_Dec_2011_FCB_in_England_and_Wales_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::workplace-zones-december-2011-boundaries-ew-bfc-2/about",
+    )
+    GLTLA_DEC_2022_EW_BFC = BoundariesData(
+        name_short="GLTLA22",
+        url_key="GLTLA_DEC_2022_EW_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::grouped-lower-tier-local-authorities-december-2022-boundaries-ew-bfc/about",
+    )
+    Census_Merged_Wards_Dec_2011_FEB_in_England_and_Wales = BoundariesData(
+        name_short="cmwd11",
+        url_key="Census_Merged_Wards_Dec_2011_FEB_in_England_and_Wales_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::census-merged-wards-december-2011-boundaries-ew-bfe/about",
+    )
+
+    # Electoral
+    PCON_JULY_2024_UK_BFC = BoundariesData(
+        name_short="PCON24",
+        url_key="Westminster_Parliamentary_Constituencies_July_2024_Boundaries_UK_BFC",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::westminster-parliamentary-constituencies-july-2024-boundaries-uk-bfc-2/about",
+        max_query_records=50,
+    )
+    London_Assembly_Constituencies_Dec_2018_FCB_EN = BoundariesData(
+        name_short="lac18",
+        url_key="London_Assembly_Constituencies_Dec_2018_FCB_EN_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::london-assembly-constituencies-december-2018-boundaries-en-bfc-2/about",
+    )
+    European_Electoral_Regions_Dec_2018_FCB_UK = BoundariesData(
+        name_short="eer18",
+        url_key="European_Electoral_Regions_Dec_2018_FCB_UK_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::european-electoral-regions-december-2018-boundaries-uk-bfc/about",
+    )
+
+    # # Grid
+    # GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom = BoundariesData(
+    #     name_short="",
+    #     url_key="GEOSTAT_Dec_2011_GEC_in_the_United_Kingdom_2022",
+    #     url_about="https://geoportal.statistics.gov.uk/datasets/ons::geostat-december-2011-boundaries-uk-bge-2/about",
+    # )
+
+    # OECD / Eurostat
+    ITL1_MAY_2021_UK_BFC = BoundariesData(
+        name_short="ITL121",
+        url_key="International_Territorial_Level_1_January_2021_UK_BFC_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::international-territorial-level-1-january-2021-boundaries-uk-bfc/about",
+    )
+    ITL2_JAN_2021_UK_BFC_V2 = BoundariesData(
+        name_short="ITL221",
+        url_key="International_Territorial_Level_2_January_2021_UK_BFC_V2_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::international-territorial-level-2-january-2021-boundaries-uk-bfc-v2/about",
+    )
+    ITL3_JAN_2021_UK_BFC_V3 = BoundariesData(
+        name_short="ITL321",
+        url_key="International_Territorial_Level_3_January_2021_UK_BFC_V3_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::international-territorial-level-3-january-2021-boundaries-uk-bfc-v3-2/about",
+    )
+    NUTS_Level_1_January_2018_FCB_in_the_United_Kingdom = BoundariesData(
+        name_short="nuts118",
+        url_key="NUTS_Level_1_January_2018_FCB_in_the_United_Kingdom_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::nuts-level-1-january-2018-boundaries-uk-bfc-2/about",
+    )
+    NUTS_Level_2_January_2018_FCB_in_the_United_Kingdom = BoundariesData(
+        name_short="nuts218",
+        url_key="NUTS_Level_2_January_2018_FCB_in_the_United_Kingdom_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::nuts-level-2-january-2018-boundaries-uk-bfc-1/about",
+    )
+    NUTS_Level_3_January_2018_FCB_in_the_United_Kingdom = BoundariesData(
+        name_short="nuts318",
+        url_key="NUTS_Level_3_January_2018_FCB_in_the_United_Kingdom_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::nuts-level-3-january-2018-boundaries-uk-bfc-1/about",
+    )
+    LAU1_Jan_2018_FCB_in_the_UK = BoundariesData(
+        name_short="lau118",
+        url_key="LAU1_Jan_2018_FCB_in_the_UK_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::local-administrative-units-level-1-january-2018-boundaries-uk-bfc-1/about",
+    )
+    LAU2_Dec_2014_FCB_in_England_and_Wales = BoundariesData(
+        name_short="lau214",
+        url_key="LAU2_Dec_2014_FCB_in_England_and_Wales_2022",
+        url_about="https://geoportal.statistics.gov.uk/datasets/ons::local-administrative-units-level-2-january-2015-boundaries-ew-bfc-1/about",
     )
 
     @property
@@ -125,6 +264,8 @@ def download_features(
         and data["properties"]["exceededTransferLimit"]
     ):
         raise ValueError(f"Exceeded transfer limit for {url=}")
+    if "error" in data.keys():
+        raise ValueError(f"{data}, {url=!s}")
     return data["features"]
 
 
@@ -151,7 +292,7 @@ def write_raw(
             )
             return
 
-        url_server = f"{URL_SERVICES}/{boundaries_type.data.url_key}/{boundaries_type.data.server_type}/0"
+        url_server = f"{URL_SERVICES}/{boundaries_type.data.url_key}/FeatureServer/0"
         logger.info(f"{boundaries_type=}, {url_server=!s}")
 
         meta = requests.get(f"{url_server}?f=json").json()
@@ -166,11 +307,13 @@ def write_raw(
         count = requests.get(url_count).json()["count"]
         logger.info(f"{count=}")
 
-        batches = list(batched(range(1, count + 1), MAX_QUERY_RECORDS))
+        batches = list(
+            batched(range(1, count + 1), boundaries_type.data.max_query_records)
+        )
         num_digits_chunk = len(str(len(batches)))
         for chunk, batch in enumerate(batches):
             path_chunk = path_all.with_stem(
-                path_all.stem.replace("*", str(chunk)).zfill(num_digits_chunk)
+                path_all.stem.replace("*", str(chunk).zfill(num_digits_chunk))
             )
             if path_chunk.exists():
                 logger.info(f"{path_chunk!s} exists so we do not download or write")
