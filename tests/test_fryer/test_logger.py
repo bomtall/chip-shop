@@ -8,7 +8,7 @@ from fryer.constants import FRYER_ENV_PATH_LOG
 
 @pytest.fixture
 def logger(key, temp_dir):
-    yield fryer.logger.get(key=key, path_log=temp_dir)
+    return fryer.logger.get(key=key, path_log=temp_dir)
 
 
 @pytest.mark.parametrize(
@@ -38,7 +38,7 @@ def test_get_exists_with_path_log_str(key, temp_dir):
 
 
 @pytest.mark.parametrize(
-    "key, messages_with_level",
+    ("key", "messages_with_level"),
     [
         ("key", {"test message 1": "info"}),
         ("key", {"test message 1": "info", "test message 2": "debug"}),
@@ -88,7 +88,8 @@ def test_get_multiple(key, temp_dir, logger):
     another_message = "message 2"
     another_logger.info(another_message)
     log_contents = path_log_file.read_text()
-    assert message in log_contents and another_message in log_contents
+    assert message in log_contents
+    assert another_message in log_contents
 
 
 def test_get_via_path_env(test_env, path_test_env):

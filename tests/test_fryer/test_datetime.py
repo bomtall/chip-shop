@@ -8,7 +8,7 @@ from fryer.constants import FORMAT_ISO_DATE, FORMAT_YYYYMMDD_DATE, FRYER_ENV_TOD
 
 
 @pytest.mark.parametrize(
-    "date, format, expected",
+    ("date", "format", "expected"),
     [
         (2022, "%Y", pd.Timestamp("2022-01-01")),
         (2022, None, pd.Timestamp("2022-01-01")),
@@ -36,7 +36,7 @@ def test_validate_date(date, format, expected):
 
 
 @pytest.mark.parametrize(
-    "override, format, expected",
+    ("override", "format", "expected"),
     [
         (None, None, None),
         ("2022-03-15", None, fryer.datetime.validate_date("2022-03-15")),
@@ -47,7 +47,9 @@ def test_today(override, format, expected, test_env, path_test_env):
     if override is None:
         expected = fryer.datetime.validate_date(test_env[FRYER_ENV_TODAY])
     actual = fryer.datetime.today(
-        override=override, format=format, path_env=path_test_env
+        override=override,
+        format=format,
+        path_env=path_test_env,
     )
     assert expected == actual
 

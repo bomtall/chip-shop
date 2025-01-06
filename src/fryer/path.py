@@ -4,7 +4,11 @@ import fryer.config
 from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 from fryer.typing import TypePathLike
 
-__all__ = ["log", "data"]
+__all__ = [
+    "data",
+    "for_key",
+    "log",
+]
 
 
 def log(
@@ -13,7 +17,7 @@ def log(
     path_env: TypePathLike | None = None,
 ) -> Path:
     return Path(
-        fryer.config.get(key=FRYER_ENV_PATH_LOG, path_env=path_env, override=override)
+        fryer.config.get(key=FRYER_ENV_PATH_LOG, path_env=path_env, override=override),
     )
 
 
@@ -23,7 +27,7 @@ def data(
     path_env: TypePathLike | None = None,
 ) -> Path:
     return Path(
-        fryer.config.get(key=FRYER_ENV_PATH_DATA, path_env=path_env, override=override)
+        fryer.config.get(key=FRYER_ENV_PATH_DATA, path_env=path_env, override=override),
     )
 
 
