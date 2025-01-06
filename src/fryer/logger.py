@@ -28,7 +28,7 @@ def get(
     path_env: TypePathLike | None = None,
 ) -> TypeLogger:
     path_log = fryer.path.log(override=path_log, path_env=path_env)
-    logger = logging.getLogger(key)
+    logger = logging.Logger(key)  # noqa: LOG001 - Does not work if we use logging.getLogger
 
     path_log_file = path_log / key / "log.log"
     path_log_file.parent.mkdir(parents=True, exist_ok=True)
