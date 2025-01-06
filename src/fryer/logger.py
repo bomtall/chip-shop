@@ -5,8 +5,11 @@ import fryer.path
 from fryer.typing import TypePathLike
 
 __all__ = [
+    "TypeLogger",
     "get",
 ]
+
+TypeLogger = logging.Logger
 
 
 LOGGING_FORMATTER = logging.Formatter(
@@ -23,9 +26,9 @@ def get(
     *,
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-) -> logging.Logger:
+) -> TypeLogger:
     path_log = fryer.path.log(override=path_log, path_env=path_env)
-    logger = logging.Logger(key)
+    logger = logging.Logger(key)  # noqa: LOG001 - Does not work if we use logging.getLogger
 
     path_log_file = path_log / key / "log.log"
     path_log_file.parent.mkdir(parents=True, exist_ok=True)

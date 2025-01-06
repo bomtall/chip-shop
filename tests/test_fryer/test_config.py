@@ -1,7 +1,7 @@
 import pytest
 
 import fryer.config
-from fryer.constants import __all__ as FRYER_CONSTANTS
+from fryer.constants import __all__ as FRYER_CONSTANTS  # noqa: N812
 
 ENV_KEYS = [item for item in FRYER_CONSTANTS if item.startswith("FRYER_ENV")]
 
@@ -12,7 +12,7 @@ def test_load(test_env, path_test_env):
 
 
 @pytest.mark.parametrize("key", ENV_KEYS)
-@pytest.mark.parametrize("override", (None, "TEST_OVERRIDE"))
+@pytest.mark.parametrize("override", [None, "TEST_OVERRIDE"])
 def test_get(key, override, test_env, path_test_env):
     value = fryer.config.get(key=key, path_env=path_test_env, override=override)
     if override is not None:

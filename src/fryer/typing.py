@@ -2,8 +2,8 @@ import datetime
 from pathlib import Path
 
 __all__ = [
-    "TypePathLike",
     "TypeDatetimeLike",
+    "TypePathLike",
 ]
 
 TypePathLike = str | Path

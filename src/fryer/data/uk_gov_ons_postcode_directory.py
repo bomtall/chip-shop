@@ -1,6 +1,6 @@
+from collections.abc import Sequence
 from io import BytesIO
 from pathlib import Path
-from typing import Sequence
 from zipfile import ZipFile
 
 import polars as pl
@@ -9,14 +9,14 @@ import requests
 import fryer.datetime
 import fryer.logger
 import fryer.path
-from fryer.constants import FORMAT_ISO_DATE
+from fryer.constants import FORMAT_ISO_DATE, TIMEOUT_LONG
 from fryer.typing import TypePathLike
 
 __all__ = [
     "KEY",
     "path",
-    "write",
     "read",
+    "write",
 ]
 
 
@@ -57,7 +57,8 @@ def path(
     path_env: TypePathLike | None = None,
 ) -> Path:
     path_key = fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
-    # TODO: Need to figure out a better way of doing this
+    # TODO(squid): Need to figure out a better way of doing this
+    # https://github.com/bomtall/chip-shop/issues/38
     today = fryer.datetime.today(path_env=path_env)
     date_download = fryer.datetime.validate_date(DATE_DOWNLOAD)
     return (
@@ -66,7 +67,7 @@ def path(
     )
 
 
-def get_map_from_zip_file(
+def get_map_from_zip_file(  # noqa: PLR0913 - Needs all the arguments
     *,
     zip_file: ZipFile,
     file_name_to_search: str,
@@ -75,31 +76,34 @@ def get_map_from_zip_file(
     default_value: str | None = None,
     index_columns: Sequence[int] = (0, 1),
 ) -> dict[str, str]:
-    # TODO: add a test for this function
+    # TODO(squid): add a test for this function
+    # https://github.com/bomtall/chip-shop/issues/38
     file_names = [
         name
         for name in zip_file.namelist()
         if file_name_to_search in name and name.endswith(".csv")
     ]
     if len(file_names) != 1:
-        raise ValueError(f"{len(file_names)=} has to be one {file_names=}")
+        msg = f"{len(file_names)=} has to be one {file_names=}"
+        raise ValueError(msg)
     map_original = {
         **dict(
             pl.read_csv(zip_file.read(file_names[0]), columns=index_columns)
             .drop_nulls()
-            .iter_rows()
+            .iter_rows(),
         ),
         **additional_map,
     }
     if all_keys is not None:
         if default_value is None:
+            msg = f"{default_value=} cannot be None if {all_keys=} is not None"
             raise ValueError(
-                f"{default_value=} cannot be None if {all_keys=} is not None"
+                msg,
             )
         map_remaining = {
             remaining_key: default_value
             for remaining_key in all_keys
-            if remaining_key not in map_original.keys()
+            if remaining_key not in map_original
         }
     else:
         map_remaining = {}
@@ -111,25 +115,28 @@ def write(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
-    """
-    Link to search datasets https://geoportal.statistics.gov.uk/search?q=PRD_ONSPD&sort=Date%20Created%7Ccreated%7Cdesc
-    Information https://geoportal.statistics.gov.uk/datasets/b54177d3d7264cd6ad89e74dd9c1391d/about
+) -> None:
+    """Link to search datasets https://geoportal.statistics.gov.uk/search?q=PRD_ONSPD&sort=Date%20Created%7Ccreated%7Cdesc
+    Information https://geoportal.statistics.gov.uk/datasets/b54177d3d7264cd6ad89e74dd9c1391d/about.
     """
     key = KEY
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
     logger.info(f"{path_key=}, {path_data=}, {key=}")
 
     path_file = path(path_data=path_data, path_env=path_env)
 
-    # TODO: figure out if we want to move this out of the function
+    # TODO(squid): figure out if we want to move this out of the function
+    # https://github.com/bomtall/chip-shop/issues/35
     if path_file.exists():
         logger.info(
-            f"{path_file=} exists and will not download anything for {key=}, we also assume meta file exists"
+            f"{path_file=} exists and will not download anything for {key=}, we also assume meta file exists",
         )
         return
 
@@ -138,7 +145,7 @@ def write(
     logger.info(f"{URL_DOWNLOAD=}, {datetime_download=}, {key=}")
 
     # Split off this download into a separate function
-    response = requests.get(URL_DOWNLOAD)
+    response = requests.get(URL_DOWNLOAD, timeout=TIMEOUT_LONG)
     zip_file = ZipFile(BytesIO(response.content))
 
     date_download = fryer.datetime.validate_date(DATE_DOWNLOAD)
@@ -148,9 +155,11 @@ def write(
         infer_schema_length=10_000,
     )
 
-    # TODO: add how to do this using debugger
+    # TODO(squid): add how to do this using debugger
+    # https://github.com/bomtall/chip-shop/issues/38
 
-    # Follow f"User Guide/ONSPD User Guide {date_download:%b} {date_download:%Y}.pdf" for data information
+    # Follow f"User Guide/ONSPD User Guide {date_download:%b} {date_download:%Y}.pdf"
+    # for data information
     exprs = [
         # Postcode as variable length
         pl.col("pcds").alias("postcode"),
@@ -158,7 +167,7 @@ def write(
         pl.col("pcd").alias("postcode_7_character"),
         # Postcode in 8 character version (second part right aligned)
         pl.col("pcd2").alias("postcode_8_character"),
-        # Date of introduction - The most recent occurrence of the postcode’s date of introduction.
+        # Date of introduction - The most recent occurrence of the postcode's date of introduction.
         pl.col("dointr").cast(pl.String).str.to_date(format="%Y%m").alias("date_start"),
         # Date of termination - we allow for strict=False as they have not been terminated.
         # If present, the most recent occurrence of the postcode's date of termination, otherwise: null = 'live' postcode
@@ -238,7 +247,7 @@ def write(
                 ),
                 return_dtype=pl.Enum(
                     # Duplicates in the names
-                    sorted(set(map_county_electoral_division.values()))
+                    sorted(set(map_county_electoral_division.values())),
                 ),
             )
             .alias("county_electoral_division")
@@ -359,7 +368,7 @@ def write(
                 ),
                 # Duplicates in the names
                 return_dtype=pl.Enum(
-                    sorted(set(map_national_health_service_england_region.values()))
+                    sorted(set(map_national_health_service_england_region.values())),
                 ),
             )
             .alias("national_health_service_england_region")
@@ -435,7 +444,7 @@ def write(
                     },
                 ),
                 return_dtype=pl.Enum(
-                    map_westminster_parliamentary_constituency.values()
+                    map_westminster_parliamentary_constituency.values(),
                 ),
             )
             .alias("westminster_parliamentary_constituency")
@@ -561,7 +570,7 @@ def write(
                     ),
                 },
                 return_dtype=pl.Enum(
-                    sorted(set(map_international_territorial_level.values()))
+                    sorted(set(map_international_territorial_level.values())),
                 ),
             )
             .alias("international_territorial_level")
@@ -615,7 +624,7 @@ def write(
                     additional_map={"": UNKNOWN},
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_census_area_statitics_ward.values()))
+                    sorted(set(map_census_area_statitics_ward.values())),
                 ),
             )
             .alias("census_area_statitics_ward")
@@ -660,7 +669,7 @@ def write(
                     default_value=UNKNOWN,
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_lower_layer_super_output_area_census_2001.values()))
+                    sorted(set(map_lower_layer_super_output_area_census_2001.values())),
                 ),
             )
             .alias("lower_layer_super_output_area_census_2001")
@@ -686,7 +695,9 @@ def write(
                     },
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_middle_layer_super_output_area_census_2001.values()))
+                    sorted(
+                        set(map_middle_layer_super_output_area_census_2001.values()),
+                    ),
                 ),
             )
             .alias("middle_layer_super_output_area_census_2001")
@@ -733,9 +744,9 @@ def write(
                 return_dtype=pl.Enum(
                     sorted(
                         set(
-                            map_output_area_classification_supergroup_census_2001.values()
-                        )
-                    )
+                            map_output_area_classification_supergroup_census_2001.values(),
+                        ),
+                    ),
                 ),
             )
             .alias("output_area_classification_supergroup_census_2001")
@@ -752,8 +763,8 @@ def write(
                 ),
                 return_dtype=pl.Enum(
                     sorted(
-                        set(map_output_area_classification_group_census_2001.values())
-                    )
+                        set(map_output_area_classification_group_census_2001.values()),
+                    ),
                 ),
             )
             .alias("output_area_classification_group_census_2001")
@@ -789,7 +800,7 @@ def write(
                     additional_map={"": UNKNOWN},
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_lower_layer_super_output_area_census_2011.values()))
+                    sorted(set(map_lower_layer_super_output_area_census_2011.values())),
                 ),
             )
             .alias("lower_layer_super_output_area_census_2011")
@@ -811,7 +822,9 @@ def write(
                     additional_map={"": UNKNOWN},
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_middle_layer_super_output_area_census_2011.values()))
+                    sorted(
+                        set(map_middle_layer_super_output_area_census_2011.values()),
+                    ),
                 ),
             )
             .alias("middle_layer_super_output_area_census_2011")
@@ -915,9 +928,9 @@ def write(
                 return_dtype=pl.Enum(
                     sorted(
                         set(
-                            map_output_area_classification_supergroup_census_2011.values()
-                        )
-                    )
+                            map_output_area_classification_supergroup_census_2011.values(),
+                        ),
+                    ),
                 ),
             )
             .alias("output_area_classification_supergroup_census_2011")
@@ -934,8 +947,8 @@ def write(
                 ),
                 return_dtype=pl.Enum(
                     sorted(
-                        set(map_output_area_classification_group_census_2011.values())
-                    )
+                        set(map_output_area_classification_group_census_2011.values()),
+                    ),
                 ),
             )
             .alias("output_area_classification_group_census_2011")
@@ -951,7 +964,7 @@ def write(
                     index_columns=(0, 3),
                 ),
                 return_dtype=pl.Enum(
-                    map_output_area_classification_subgroup_census_2011.values()
+                    map_output_area_classification_subgroup_census_2011.values(),
                 ),
             )
             .alias("output_area_classification_subgroup_census_2011")
@@ -1105,7 +1118,7 @@ def write(
                     default_value=UNKNOWN,
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_lower_layer_super_output_area_census_2021.values()))
+                    sorted(set(map_lower_layer_super_output_area_census_2021.values())),
                 ),
             )
             .alias("lower_layer_super_output_area_census_2021")
@@ -1133,7 +1146,9 @@ def write(
                     default_value=UNKNOWN,
                 ),
                 return_dtype=pl.Enum(
-                    sorted(set(map_middle_layer_super_output_area_census_2021.values()))
+                    sorted(
+                        set(map_middle_layer_super_output_area_census_2021.values()),
+                    ),
                 ),
             )
             .alias("middle_layer_super_output_area_census_2021")
@@ -1164,7 +1179,7 @@ def read(
     return pl.scan_parquet(source=path_file)
 
 
-def main():
+def main() -> None:
     write()
 
 

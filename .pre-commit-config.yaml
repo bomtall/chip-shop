@@ -16,6 +16,10 @@ repos:
        name: isort
        language: system
        entry: uv run isort
+    #  - id: black
+    #    name: black
+    #    language: system
+    #    entry: uv run black
      - id: ruff
        name: ruff-check
        language: system

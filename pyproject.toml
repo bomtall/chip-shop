@@ -68,8 +68,46 @@ profile = "black"
 
 [[tool.mypy.overrides]]
 # No stubs for these packages
-module = "geopandas.*,pyogrio.*,convertbng.util.*"
+module = "geopandas.*,pyogrio.*,convertbng.util.*,fryer.*"
 ignore_missing_imports = true
 
-# [tool.ruff.lint]
-# select = ["ALL"]
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D211", # warning: `one-blank-line-before-class` (D203) and `no-blank-line-before-class` (D211) are incompatible. Ignoring `one-blank-line-before-class`.
+    "D213", # warning: `multi-line-summary-first-line` (D212) and `multi-line-summary-second-line` (D213) are incompatible. Ignoring `multi-line-summary-second-line`.
+    "COM812", # warning: The following rules may cause conflicts when used with the formatter: `COM812`, `D203`, `ISC001`. To avoid unexpected behavior, we recommend disabling these rules, either by removing them from the `select` or `extend-select` configuration, or adding them to the `ignore` configuration.
+    "D203", # warning: The following rules may cause conflicts when used with the formatter: `COM812`, `D203`, `ISC001`. To avoid unexpected behavior, we recommend disabling these rules, either by removing them from the `select` or `extend-select` configuration, or adding them to the `ignore` configuration.
+    "ISC001", # warning: The following rules may cause conflicts when used with the formatter: `COM812`, `D203`, `ISC001`. To avoid unexpected behavior, we recommend disabling these rules, either by removing them from the `select` or `extend-select` configuration, or adding them to the `ignore` configuration.
+    "G004", # Okay to use fstring in logger, the convience is worth the runtime slowness
+    "D100", # Bring this back in by adding docstrings
+    "D101", # Bring this back in by adding docstrings
+    "D102", # Bring this back in by adding docstrings
+    "D103", # Bring this back in by adding docstrings
+    "D104", # Bring this back in by adding docstrings
+    "PD901", # Using generic variable names should not be a problem
+    "FIX002", # Need to figure out how to fix this
+    "E501", # Need to figure out how to fix this
+    "D205", # Need to figure out how to fix this
+]
+extend-safe-fixes = [
+    "C408", # dict literal
+]
+
+[tool.ruff.lint.per-file-ignores]
+"src/fryer/all.py" = [
+    "A004", # Okay to shadow here
+]
+"**/tests/*" = [
+    "A002", # Okay to shadow in tests
+    "ANN001", # Don't need annotations
+    "ANN201", # Don't need annotations
+    "DTZ001", # Okay not to pass tzinfo for datetime
+    "PLR0913", # Too many arguments for tests okay due to fixtures
+    "PLR2004", # Okay to have magic constants to assert against
+    "S101", # Want to use asserts
+]
+"*.ipynb" = [
+    "T201", # Okay to print in notebooks
+    "ERA001", # Okay to have commented out code in a notebook
+]

@@ -15,6 +15,7 @@ from tqdm import tqdm
 
 import fryer.logger
 import fryer.path
+from fryer.constants import TIMEOUT_LONG, TIMEOUT_SHORT
 from fryer.typing import TypePathLike
 
 __all__ = [
@@ -28,14 +29,15 @@ __all__ = [
 
 KEY = Path(__file__).stem
 
-# TODO: need to check if this changes often and figure out a solution for it
+# TODO(squid): need to check if this changes often and figure out a solution for it
+# https://github.com/bomtall/chip-shop/issues/36
 API_KEY_ONS = "ESMARspQHYMw9BZ9"
 URL_SERVICES = f"https://services1.arcgis.com/{API_KEY_ONS}/arcgis/rest/services"
 MAX_QUERY_RECORDS = 2_000
 
 
 def get_all_services_available_online() -> pl.DataFrame:
-    response = requests.get(url=f"{URL_SERVICES}?f=pjson")
+    response = requests.get(url=f"{URL_SERVICES}?f=pjson", timeout=TIMEOUT_LONG)
     return pl.DataFrame(
         data=response.json()["services"],
         schema={"name": pl.String, "type": pl.String, "url": pl.String},
@@ -307,11 +309,11 @@ class BoundariesType(Enum):
     )
 
     @property
-    def data(self):
+    def data(self) -> BoundariesData:
         return self.value
 
     @property
-    def key(self):
+    def key(self) -> str:
         return f"{KEY}_{self.name.casefold()}"
 
 
@@ -333,20 +335,19 @@ class TypeGeoJson(TypedDict):
     properties: dict[str, Any]
 
 
-def download_features(
-    *,
-    url,
-) -> TypeGeoJson:
-    response = requests.get(url=url)
+def download_features(*, url: str) -> TypeGeoJson:
+    response = requests.get(url=url, timeout=TIMEOUT_LONG)
     data = response.json()
     if (
-        "properties" in data.keys()
+        "properties" in data
         and "exceededTransferLimit" in data["properties"]
         and data["properties"]["exceededTransferLimit"]
     ):
-        raise ValueError(f"Exceeded transfer limit for {url=}")
-    if "error" in data.keys():
-        raise ValueError(f"{data}, {url=!s}")
+        msg = f"Exceeded transfer limit for {url=}"
+        raise ValueError(msg)
+    if "error" in data:
+        msg = f"{data}, {url=!s}"
+        raise ValueError(msg)
     return data
 
 
@@ -356,28 +357,33 @@ def write_raw(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     key = boundaries_type.key
     path_all = path_raw(
-        boundaries_type=boundaries_type, path_data=path_data, path_env=path_env
+        boundaries_type=boundaries_type,
+        path_data=path_data,
+        path_env=path_env,
     )
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     path_complete = path_all.parent / "complete"
     lock = FileLock(path_complete.with_suffix(".lock"))
-    # TODO: check this works and make it a test - idea is to make sure only one thing writes to it
-    # Also not sure if this is worth doing, feels a bit like doing too much and not getting much out
+    # TODO(squid): check this works and make it a test - idea is to make sure only one
+    # thing writes to it
+    # https://github.com/bomtall/chip-shop/issues/37
+    # Also not sure if this is worth doing, feels a bit like doing too much and not
+    # getting much out
     with lock:
         if path_complete.exists():
             logger.info(
-                f"{path_all!s} exists so we do not download or write anything, checked via {path_complete!s}"
+                f"{path_all!s} exists so we do not download or write anything, checked via {path_complete!s}",
             )
             return
 
         url_server = f"{URL_SERVICES}/{boundaries_type.data.url_key}/FeatureServer/0"
         logger.info(f"{boundaries_type=}, {url_server=!s}")
 
-        meta = requests.get(f"{url_server}?f=json").json()
+        meta = requests.get(f"{url_server}?f=json", timeout=TIMEOUT_SHORT).json()
         object_id_field = meta["objectIdField"]
         logger.info(f"{object_id_field=}")
 
@@ -386,16 +392,16 @@ def write_raw(
 
         url_count = f"{url_query}?f=json&returnCountOnly=true&where=1%3D1%20AND%201%3D1"
         logger.info(f"Getting count via {url_count=!s}")
-        count = requests.get(url_count).json()["count"]
+        count = requests.get(url_count, timeout=TIMEOUT_SHORT).json()["count"]
         logger.info(f"{count=}")
 
         batches = list(
-            batched(range(1, count + 1), boundaries_type.data.max_query_records)
+            batched(range(1, count + 1), boundaries_type.data.max_query_records),
         )
         num_digits_chunk = len(str(len(batches)))
         for chunk, batch in enumerate(batches):
             path_chunk = path_all.with_stem(
-                path_all.stem.replace("*", str(chunk).zfill(num_digits_chunk))
+                path_all.stem.replace("*", str(chunk).zfill(num_digits_chunk)),
             )
             if path_chunk.exists():
                 logger.info(f"{path_chunk!s} exists so we do not download or write")
@@ -420,7 +426,7 @@ def write_raw_all(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     for boundaries_type in tqdm(list(BoundariesType)):
         write_raw(
             boundaries_type=boundaries_type,
@@ -443,7 +449,9 @@ def read_raw(
         path_env=path_env,
     )
     logger = fryer.logger.get(
-        key=boundaries_type.key, path_log=path_log, path_env=path_env
+        key=boundaries_type.key,
+        path_log=path_log,
+        path_env=path_env,
     )
     logger.info(f"Reading from {path_all!s}")
     # This is currently necessary for the read to work
@@ -454,7 +462,7 @@ def read_raw(
     ).pipe(gpd.GeoDataFrame)
 
 
-def main():
+def main() -> None:
     write_raw_all()
 
 

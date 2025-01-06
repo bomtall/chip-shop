@@ -7,7 +7,7 @@ import fryer.data
 
 
 @pytest.mark.parametrize(
-    "path_key, date_start, date_end, expected_exception, match",
+    ("path_key", "date_start", "date_end", "expected_exception", "match"),
     [
         (
             Path("/test_path_key"),
@@ -26,7 +26,12 @@ import fryer.data
     ],
 )
 def test_get_path_file_raw_exception(
-    path_key, date_start, date_end, expected_exception, match, path_test_env
+    path_key,
+    date_start,
+    date_end,
+    expected_exception,
+    match,
+    path_test_env,
 ):
     with pytest.raises(expected_exception=expected_exception, match=match):
         fryer.data.uk_police_crime_data.get_path_file_raw(
@@ -38,7 +43,7 @@ def test_get_path_file_raw_exception(
 
 
 @pytest.mark.parametrize(
-    "path_key, date_start, date_end, expected",
+    ("path_key", "date_start", "date_end", "expected"),
     [
         (
             Path("/test_path_key"),

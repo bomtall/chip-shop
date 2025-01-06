@@ -8,7 +8,8 @@ import fryer.path
 @pytest.mark.integration
 def test_download(temp_dir):
     fryer.data.uk_gov_dept_for_transport_road_accident.download(
-        path_log=temp_dir, path_data=temp_dir
+        path_log=temp_dir,
+        path_data=temp_dir,
     )
     assert {
         path.stem
