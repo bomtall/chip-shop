@@ -32,7 +32,7 @@ function log_warn {
 
 mkdir -p "$repo_path"
 
-git clone https://github.com/bomtall/chip-shop.git "$repo_path"
+git clone -b main https://github.com/bomtall/chip-shop.git "$repo_path"
 
 log_info "cloned repo to $repo_path"
 
