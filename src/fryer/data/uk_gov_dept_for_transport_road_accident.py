@@ -168,21 +168,23 @@ def release_schedule(
     logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
 
     # get and sort a list of the created datetimes of the existing files
-    ts = [
+    if ts := [
         pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
         for filepath in path_key.rglob("*.csv")
-    ]
-    ts.sort(reverse=True)
+    ]:
+        ts.sort(reverse=True)
 
-    new_data_available = ts[0] > pd.Timestamp(
-        ts[0].year, 10, 1
-    ) and pd.Timestamp.today() > pd.Timestamp(ts[0].year + 1, 10, 1)
+        new_data_available = ts[0] > pd.Timestamp(
+            ts[0].year, 10, 1
+        ) and pd.Timestamp.today() > pd.Timestamp(ts[0].year + 1, 10, 1)
 
-    if not new_data_available:
-        logger.info(f"Data for {ts[0].year - 1} is already downloaded")
-        logger.info(f"Data for {ts[0].year} has not been released yet")
-        logger.info(f"Skipping download of {path_key=}")
-    return new_data_available
+        if not new_data_available:
+            logger.info(f"Data for {ts[0].year - 1} is already downloaded")
+            logger.info(f"Data for {ts[0].year} has not been released yet")
+            logger.info(f"Skipping download of {path_key=}")
+        return new_data_available
+    else:
+        return True
 
 
 def download(
