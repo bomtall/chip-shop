@@ -4,7 +4,6 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 import requests
-from shapely.geometry import Point
 
 import fryer.data
 import fryer.datetime
@@ -169,13 +168,16 @@ def release_schedule(
     path_key = fryer.path.for_key(key=KEY_RAW, path_data=path_data, path_env=path_env)
     logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
 
+    if not path_key.exists():
+        path_key.mkdir(parents=True)
+        return True
+
     # get and sort a list of the created datetimes of the existing files
 
-    if any(path_key.rglob("*.csv")):
-        ts = [
-            pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
-            for filepath in path_key.rglob("*.csv")
-        ]
+    if ts := [
+        pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
+        for filepath in path_key.rglob("*.csv")
+    ]:
         ts.sort(reverse=True)
 
         new_data_available = ts[0] > pd.Timestamp(
@@ -274,11 +276,6 @@ def derive(
     enum_mapping = load_data_guide(path_data=path_data, path_env=path_env)
     datasets = load_datasets(path_data=path_data, path_env=path_env)
 
-    gdf = fryer.data.ons_local_authority_district_boundaries.read(
-        path_data=path_data,
-        path_env=path_env,
-    )
-
     for dataset, path in datasets.items():
         info_df = enum_mapping.filter(pl.col("table") == dataset)
         df = fryer.transformer.process_data(
@@ -293,22 +290,20 @@ def derive(
         )
 
         if dataset == "collision":
-            for row in df.iter_rows():
-                if row[15] in [None, -1, "-1"] and row[5] and row[6]:
-                    # TODO(eel): figure out if this is actually working
-                    # https://github.com/bomtall/chip-shop/issues/34
-                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][  # type: ignore  # noqa: PGH003
-                        "LAD24CD"
-                    ]
-
             df = df.with_columns(
                 pl.col("first_road_number").replace(-1, None),
                 pl.col("second_road_number").replace(-1, None),
             )
 
+        if not (
+            path_key := fryer.path.for_key(
+                key=KEY, path_data=path_data, path_env=path_env
+            )
+        ).exists():
+            path_key.mkdir(parents=True)
+
         df.write_parquet(
-            fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
-            / f"{dataset}.parquet",
+            path_key / f"{dataset}.parquet",
         )
 
 
