@@ -123,6 +123,7 @@ class BoundariesType(Enum):
         name_short="WD24",
         url_key="Wards_May_2024_Boundaries_UK_BFE",
         url_about="https://geoportal.statistics.gov.uk/datasets/ons::wards-may-2024-boundaries-uk-bfc-2/about",
+        max_query_records=200,
     )
 
     # Census 2021

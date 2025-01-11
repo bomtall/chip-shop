@@ -20,5 +20,5 @@ FORMAT_ISO_DATE: str = "%Y-%m-%d"
 FORMAT_YYYYMMDD_DATE: str = "%Y%m%d"
 
 
-TIMEOUT_LONG: int = 1_000
+TIMEOUT_LONG: int = 600
 TIMEOUT_SHORT: int = 60
