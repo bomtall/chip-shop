@@ -42,3 +42,6 @@ log_info "ran setup.sh"
 
 bash "${repo_path}/run_data.sh"
 log_info "ran run_data.sh"
+
+bash "${repo_path}/run_tests.sh"
+log_info "ran run_tests.sh"
