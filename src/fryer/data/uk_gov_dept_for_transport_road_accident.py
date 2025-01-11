@@ -185,8 +185,9 @@ def release_schedule(
             logger.info(f"Data for {ts[0].year} has not been released yet")
             logger.info(f"Skipping download of {path_key=}")
         return new_data_available
-    else:
-        return True
+    # if there are no files, then download
+    return True
+
 
 def download(
     *,
