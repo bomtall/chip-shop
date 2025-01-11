@@ -29,9 +29,8 @@ function log_warn {
 
 ### Setup chip-shop
 
-
+rm -rf "$repo_path"
 mkdir -p "$repo_path"
-
 git clone -b main https://github.com/bomtall/chip-shop.git "$repo_path"
 
 log_info "cloned repo to $repo_path"

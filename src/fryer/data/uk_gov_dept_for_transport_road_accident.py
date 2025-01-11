@@ -170,10 +170,12 @@ def release_schedule(
     logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
 
     # get and sort a list of the created datetimes of the existing files
-    if ts := [
-        pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
-        for filepath in path_key.rglob("*.csv")
-    ]:
+
+    if any(path_key.rglob("*.csv")):
+        ts = [
+            pd.Timestamp.fromtimestamp(filepath.stat().st_ctime)
+            for filepath in path_key.rglob("*.csv")
+        ]
         ts.sort(reverse=True)
 
         new_data_available = ts[0] > pd.Timestamp(
