@@ -4,9 +4,8 @@ import pytest
 import requests
 import requests_mock
 
-from fryer.requests import validate_response
 import fryer.logger
-
+from fryer.requests import validate_response
 
 KEY = Path(__file__).stem
 
@@ -19,7 +18,7 @@ adapter.register_uri("GET", "mock://test_fail.com", text="fail", status_code=404
 
 
 @pytest.mark.parametrize(
-    "response,url,key,expected",
+    ("response", "url", "key", "expected"),
     [
         (
             session.get("mock://test_success.com"),
@@ -38,7 +37,7 @@ def test_success_requests_validate_response(response, url, key, expected, temp_d
 
 
 @pytest.mark.parametrize(
-    "response,url,key,expected",
+    ("response", "url", "key", "expected"),
     [(session.get("mock://test_fail.com"), "mock://test_fail.com", KEY, ValueError)],
 )
 def test_error_requests_validate_response(response, url, key, expected, temp_dir):

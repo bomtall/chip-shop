@@ -4,20 +4,19 @@ from pathlib import Path
 import lxml.html
 import pandas as pd
 import requests
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
+from fryer.constants import FORMAT_ISO_DATE, TIMEOUT_LONG, TIMEOUT_SHORT
 from fryer.typing import TypeDatetimeLike, TypePathLike
-
 
 __all__ = [
     "KEY",
     "KEY_RAW",
-    "write_raw",
     "get_years",
+    "write_raw",
     "write_raw_all",
 ]
 
@@ -32,17 +31,19 @@ def write_raw(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
-    """
-    Link to setup the download https://www.find-school-performance-data.service.gov.uk/download-data
+) -> None:
+    """Link to setup the download https://www.find-school-performance-data.service.gov.uk/download-data
     Publication timetable https://www.find-school-performance-data.service.gov.uk/publication-timetable
-    Guidance https://www.gov.uk/government/collections/school-and-college-performance-measures
+    Guidance https://www.gov.uk/government/collections/school-and-college-performance-measures.
     """
     key = KEY_RAW
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
     logger.info(f"{path_key=}, {path_data=}, {key=}")
 
@@ -54,40 +55,41 @@ def write_raw(
     path_file = path_key / f"{year:{FORMAT_ISO_DATE}}_data.zip"
     logger.info(f"{path_file=} for {key=}")
 
-    # TODO: figure out if we want to move this out of the function
+    # TODO(squid): figure out if we want to move this out of the function
+    # https://github.com/bomtall/chip-shop/issues/35
     if path_file.exists():
         logger.info(
-            f"{path_file=} exists and will not download anything for {key=}, we also assume meta file exists"
+            f"{path_file=} exists and will not download anything for {key=}, we also assume meta file exists",
         )
         return
 
     # headers for requests to make sure to get proper response
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
     }
 
     # Get "filters" which are different data types available
     url_download_data_info = f"https://www.compare-school-performance.service.gov.uk/download-data?currentstep=region&downloadYear={year_start}-{year_end}&regiontype=all&la=0"
     logger.info(f"{url_download_data_info=}")
-    response_download_data_info = requests.get(url_download_data_info, headers=headers)
+    response_download_data_info = requests.get(
+        url_download_data_info,
+        headers=headers,
+        timeout=TIMEOUT_SHORT,
+    )
     et_download_data_info = lxml.html.parse(StringIO(response_download_data_info.text))
     data_types = ",".join(
         sorted(
             {
                 element.attrib["value"].upper()
                 for element in et_download_data_info.findall(
-                    ".//input[@name='datatypes']"
+                    ".//input[@name='datatypes']",
                 )
-            }
-        )
+            },
+        ),
     )
 
-    if year_end < 1995:
-        # Only xls is available before 1995
-        file_format = "xls"
-    else:
-        # Sometimes even if you ask for a csv, you will get xls
-        file_format = "csv"
+    # Only xls is available before 1995 (Sometimes even if you ask for a csv, you will get xls)
+    file_format = "xls" if year_end < 1995 else "csv"  # noqa: PLR2004
 
     url = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions=0&filters={data_types}&fileformat={file_format}&year={year_start}-{year_end}&meta=false"
     url_meta = f"https://www.find-school-performance-data.service.gov.uk/download-data?download=true&regions={data_types}&filters=meta&fileformat=csv&year={year_start}-{year_end}&meta=true"
@@ -96,24 +98,28 @@ def write_raw(
     logger.info(f"{url_meta=}, {key=}")
 
     logger.info(f"Reading data {url=}")
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, timeout=TIMEOUT_LONG)
     logger.info(f"{response}")
     if not response.ok:
+        msg = f"Did not read response correctly for {key=}, {url=}, {response=}"
         raise ValueError(
-            f"Did not read response correctly for {key=}, {url=}, {response=}"
+            msg,
         )
 
     logger.info(f"Dumping {key=} data to {path_file=}")
     path_file.write_bytes(response.content)
 
     # Meta
-    if year_end > 2010:
+    if year_end > 2010:  # noqa: PLR2004 - Okay to compare a magic number (year)
         logger.info(f"Reading meta {url_meta=}")
-        response = requests.get(url_meta, headers=headers)
+        response = requests.get(url_meta, headers=headers, timeout=TIMEOUT_LONG)
         logger.info(f"{response}")
         if not response.ok:
-            raise ValueError(
+            msg = (
                 f"Did not read response correctly for {key=}, {url_meta=}, {response=}"
+            )
+            raise ValueError(
+                msg,
             )
 
         path_file_meta = path_key / f"{year:{FORMAT_ISO_DATE}}_meta.zip"
@@ -142,7 +148,7 @@ def get_years(
                 "1995-01-01",
                 # Covid
                 "2020-01-01",
-            ]
+            ],
         )
         .to_list()
     )
@@ -153,7 +159,7 @@ def write_raw_all(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     key = KEY_RAW
     years = get_years(path_env=path_env)
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
@@ -167,7 +173,7 @@ def write_raw_all(
         )
 
 
-def main():
+def main() -> None:
     write_raw_all()
 
 

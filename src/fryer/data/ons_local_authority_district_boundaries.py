@@ -1,26 +1,28 @@
-import requests
 from pathlib import Path
 
 import geopandas as gpd
+import requests
 
 import fryer.data
 import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
-from fryer.typing import TypePathLike
 import fryer.transformer
+from fryer.constants import TIMEOUT_LONG
+from fryer.typing import TypePathLike
 
 key = Path(__file__).stem
 
 
 def download(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     url = "https://stg-arcgisazurecdataprod1.az.arcgis.com/exportfiles-1559-23740/Local_Authority_Districts_May_2024_Boundaries_UK_BFC_-6788913184658251542.geojson?sv=2018-03-28&sr=b&sig=E2jq3p5CCjWdfSIM8JGdS8c2p%2BNs1%2BvPOsk9VqAOw1Q%3D&se=2025-01-03T21%3A01%3A16Z&sp=r"
-    response = requests.get(url)
+    response = requests.get(url, timeout=TIMEOUT_LONG)
     fryer.requests.validate_response(
         response=response,
         url=url,
@@ -29,7 +31,10 @@ def download(
     )
 
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
 
     path_file = path_key / f"{fryer.datetime.today(format='%Y-%m-%d')}_data.geojson"
@@ -38,30 +43,34 @@ def download(
 
 
 def get_latest_file(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> Path:
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
 
     return max(path_key.glob("*.geojson"), key=lambda x: x.stat().st_ctime)
 
 
 def read(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> gpd.GeoDataFrame:
     path_file = get_latest_file(
-        path_log=path_log, path_data=path_data, path_env=path_env
+        path_data=path_data,
+        path_env=path_env,
     )
 
     return gpd.read_file(path_file)
 
 
-def main():
+def main() -> None:
     download()
 
 

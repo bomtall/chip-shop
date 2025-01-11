@@ -1,8 +1,9 @@
-import requests
+from collections.abc import Iterable
 from pathlib import Path
 
-import polars as pl
 import pandas as pd
+import polars as pl
+import requests
 from shapely.geometry import Point
 
 import fryer.data
@@ -10,9 +11,9 @@ import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
-from fryer.typing import TypePathLike
 import fryer.transformer
-
+from fryer.constants import TIMEOUT_LONG
+from fryer.typing import TypePathLike
 
 guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"
@@ -20,18 +21,18 @@ guidance_url = (
 
 __all__ = [
     "KEY",
-    "download",
     "derive",
+    "download",
     "read",
-    "read_collision",
     "read_casualty",
+    "read_collision",
     "read_vehicle",
 ]
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
 
-date_formats = {
+DATE_FORMATS = {
     "vehicle": {},
     "collision": {
         "date": "%d/%m/%Y",
@@ -40,7 +41,7 @@ date_formats = {
     "casualty": {},
 }
 
-schemas = {
+SCHEMAS = {
     "vehicle": {
         "accident_index": pl.String,
         "accident_year": pl.Int32,
@@ -140,30 +141,31 @@ schemas = {
     },
 }
 
-transformations = {
+TRANSFORMATIONS = {
     "vehicle": {"age_of_driver": pl.col("age_of_driver").replace(-1, None)},
     "collision": {
         "severity": pl.when(
             pl.col("accident_severity") == "Serious",
-            ~pl.col("enhanced_severity_collision").is_null(),
+            pl.col("enhanced_severity_collision").is_not_null(),
         )
         .then(
             pl.concat_str(
                 [pl.col("accident_severity"), pl.col("enhanced_severity_collision")],
                 separator=" - ",
-            ).alias("severity")
+            ).alias("severity"),
         )
-        .otherwise(pl.col("accident_severity").alias("severity"))
+        .otherwise(pl.col("accident_severity").alias("severity")),
     },
-    "casualty": [],
+    "casualty": {},
 }
 
 
 def release_schedule(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> bool:
     path_key = fryer.path.for_key(key=KEY_RAW, path_data=path_data, path_env=path_env)
     logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
 
@@ -186,15 +188,18 @@ def release_schedule(
     else:
         return True
 
-
 def download(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> None:
     logger = fryer.logger.get(key=KEY_RAW, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(
-        key=KEY_RAW, path_data=path_data, path_env=path_env, mkdir=True
+        key=KEY_RAW,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
 
     if not release_schedule(path_data=path_data, path_env=path_env):
@@ -209,14 +214,15 @@ def download(
 
         path_file = path_key / f"{dataset}-1979-latest-published-year.csv"
 
-        response = requests.get(url, allow_redirects=True)
+        response = requests.get(url, allow_redirects=True, timeout=TIMEOUT_LONG)
         fryer.requests.validate_response(response, url, logger=logger, key=KEY_RAW)
 
         path_file.write_bytes(response.content)
 
     response = requests.get(
         base_url
-        + "/dft-road-casualty-statistics-road-safety-open-dataset-data-guide-2024.xlsx"
+        + "/dft-road-casualty-statistics-road-safety-open-dataset-data-guide-2024.xlsx",
+        timeout=TIMEOUT_LONG,
     )
     fryer.requests.validate_response(response, url, logger=logger, key=KEY_RAW)
     path_file = path_key / "dft-road-safety-open-dataset-guide-2024.xlsx"
@@ -224,46 +230,50 @@ def download(
 
 
 def load_data_guide(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> pl.DataFrame:
     # fix inconsistant naming between actual data and data guide
     return pl.read_excel(
-        fryer.path.for_key(key=KEY_RAW, path_data=path_data)
-        / "dft-road-safety-open-dataset-guide-2024.xlsx"
+        fryer.path.for_key(key=KEY_RAW, path_data=path_data, path_env=path_env)
+        / "dft-road-safety-open-dataset-guide-2024.xlsx",
     ).with_columns(
         pl.col("table").str.replace("accident", "collision"),
         pl.col("field name").str.replace(
-            "enhanced_collision_severity", "enhanced_severity_collision"
+            "enhanced_collision_severity",
+            "enhanced_severity_collision",
         ),
     )
 
 
 def load_datasets(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> dict[str, Path]:
     return {
         path.stem.split("-")[0]: path
         for path in fryer.path.for_key(
-            key=KEY_RAW, path_data=path_data, path_env=path_env
+            key=KEY_RAW,
+            path_data=path_data,
+            path_env=path_env,
         ).rglob("*.csv")
         if path.stem != "dft-road-safety-open-dataset-guide-2024"
     }
 
 
 def derive(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     enum_mapping = load_data_guide(path_data=path_data, path_env=path_env)
     datasets = load_datasets(path_data=path_data, path_env=path_env)
 
     gdf = fryer.data.ons_local_authority_district_boundaries.read(
-        path_data=path_data, path_env=path_env
+        path_data=path_data,
+        path_env=path_env,
     )
 
     for dataset, path in datasets.items():
@@ -271,18 +281,20 @@ def derive(
         df = fryer.transformer.process_data(
             file_path=path,
             file_type="csv",
-            schema=schemas[dataset],
-            column_operations=transformations[dataset],
+            schema=SCHEMAS[dataset],
+            column_operations=TRANSFORMATIONS[dataset],
             df_operations=None,
             remove_minus_one=True,
             enum_column_maps=info_df,
-            date_formats=date_formats[dataset],
+            date_formats=DATE_FORMATS[dataset],
         )
 
         if dataset == "collision":
             for row in df.iter_rows():
                 if row[15] in [None, -1, "-1"] and row[5] and row[6]:
-                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][
+                    # TODO(eel): figure out if this is actually working
+                    # https://github.com/bomtall/chip-shop/issues/34
+                    row[15] = gdf[Point(row[5], row[6]).within(gdf["geometry"])][  # type: ignore  # noqa: PGH003
                         "LAD24CD"
                     ]
 
@@ -293,44 +305,49 @@ def derive(
 
         df.write_parquet(
             fryer.path.for_key(key=KEY, path_data=path_data, path_env=path_env)
-            / f"{dataset}.parquet"
+            / f"{dataset}.parquet",
         )
 
 
-def create_column_rename_dict(df, format) -> pl.DataFrame:
+def create_column_rename_dict(
+    df: pl.DataFrame,
+    format_date: str,
+) -> dict[str, str]:
     column_names = {}
-    if format == "title":
+    if format_date == "title":
         for col in df.columns:
             column_names[col] = col.replace("_", " ").title()
-    elif format == "snake":
+    elif format_date == "snake":
         for col in df.columns:
             column_names[col] = col.lower().replace(" ", "_")
-    elif format == "spaces":
+    elif format_date == "spaces":
         for col in df.columns:
             column_names[col] = col.replace("_", " ")
     return column_names
 
 
 def read(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
     column_name_format: str = "snake",
-    datasets_to_read: list[str] = ["vehicle", "collision", "casualty"],
+    datasets_to_read: Iterable[str] = ("vehicle", "collision", "casualty"),
 ) -> dict[str, pl.DataFrame]:
     dfs = {
         path.stem: pl.read_parquet(path)
         for path in fryer.path.for_key(
-            key=KEY, path_data=path_data, path_env=path_env
+            key=KEY,
+            path_data=path_data,
+            path_env=path_env,
         ).rglob("*.parquet")
         if path.stem in datasets_to_read
     }
 
-    for dataset, cols in schemas.items():
+    for dataset, cols in SCHEMAS.items():
         for col, dtype in cols.items():
             if dtype == pl.Time and dataset in datasets_to_read:
                 dfs[dataset] = dfs[dataset].with_columns(
-                    pl.col(col).cast(pl.Time, strict=False)
+                    pl.col(col).cast(pl.Time, strict=False),
                 )
 
     if column_name_format != "snake":
@@ -341,7 +358,7 @@ def read(
 
 
 def read_collision(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
@@ -351,7 +368,7 @@ def read_collision(
 
 
 def read_casualty(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
@@ -361,7 +378,7 @@ def read_casualty(
 
 
 def read_vehicle(
-    path_log: TypePathLike | None = None,
+    *,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
@@ -370,7 +387,7 @@ def read_vehicle(
     ]
 
 
-def main():
+def main() -> None:
     download()
     derive()
 

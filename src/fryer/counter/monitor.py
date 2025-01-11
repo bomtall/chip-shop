@@ -1,17 +1,18 @@
-import sys
 import json
-import time
-import psutil
 import signal
-import threading
-import subprocess
 import socketserver
+import subprocess
+import sys
+import threading
+import time
 from http import server
 from pathlib import Path
 
-import fryer.path
-import fryer.logger
+import psutil
+
 import fryer.datetime
+import fryer.logger
+import fryer.path
 from fryer.typing import TypePathLike
 
 # close port manually: fuser -k 12669/tcp
@@ -27,14 +28,13 @@ KEY = Path(__file__).stem
 
 
 def get_cpu_core_temperatures() -> list[float]:
-    """
-    Get the temperature of each CPU core in degrees Celsius.
-    """
+    """Get the temperature of each CPU core in degrees Celsius."""
     temps = (
-        subprocess.run(
-            "cat /sys/class/hwmon/hwmon*/temp1_input",
-            shell=True,
+        subprocess.run(  # noqa: S602 - Not sure how to fix
+            ["/usr/bin/cat", "/sys/class/hwmon/hwmon*/temp1_input"],
             stdout=subprocess.PIPE,
+            check=False,
+            shell=True,
         )
         .stdout.decode("utf-8")
         .split("\n")
@@ -43,25 +43,19 @@ def get_cpu_core_temperatures() -> list[float]:
 
 
 def get_cpu_temperature() -> float:
-    """
-    Get the average CPU temperature of all cores in degrees Celsius.
-    """
+    """Get the average CPU temperature of all cores in degrees Celsius."""
     temps = get_cpu_core_temperatures()
     return sum(temps) / len(temps)
 
 
 def get_bytes_io(network_interface: str) -> tuple[int, int]:
-    """
-    Get the number of bytes received and sent on a network interface.
-    """
+    """Get the number of bytes received and sent on a network interface."""
     netstats = psutil.net_io_counters(pernic=True, nowrap=True)[network_interface]
     return netstats.bytes_recv, netstats.bytes_sent
 
 
-def get_network_stats(network_interface: str):
-    """
-    Get the network speed in megabytes per second (MB/s) for a network interface.
-    """
+def get_network_stats(network_interface: str) -> tuple[float, float]:
+    """Get the network speed in megabytes per second (MB/s) for a network interface."""
     bytes_in_1, bytes_out_1 = get_bytes_io(network_interface=network_interface)
     time.sleep(1)
     bytes_in_2, bytes_out_2 = get_bytes_io(network_interface=network_interface)
@@ -72,13 +66,14 @@ def get_network_stats(network_interface: str):
     return mbps_in, mbps_out
 
 
-def system_monitoring_stats(network_interface: str, logger) -> None:
-    """
-    Get the system monitoring statistics and save to file in JSON format continuously.
-    """
+def system_monitoring_stats(
+    network_interface: str,
+    logger: fryer.logger.TypeLogger,
+) -> None:
+    """Get the system monitoring statistics and save to file in JSON format continuously."""
     logger.info(f"Starting system monitoring stats {fryer.datetime.now()}")
     while True:
-        data_dict = {}
+        data_dict: dict[str, float | str] = {}
         mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
         cputemp = get_cpu_temperature()
         rampc = psutil.virtual_memory().percent
@@ -98,24 +93,25 @@ def system_monitoring_stats(network_interface: str, logger) -> None:
 
 
 def signal_handler(
-    sig,
-    frame,
+    sig,  # noqa: ANN001, ARG001
+    frame,  # noqa: ANN001, ARG001
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> None:
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
-    print("Shutting down the server...")
-    subprocess.run("fuser -k 12669/tcp", shell=True)
+    subprocess.run(  # noqa: S602 - Not sure how to fix
+        ["/usr/bin/fuser", "-k", "12669/tcp"],
+        check=False,
+        shell=True,
+    )
     logger.info("Shutting down the server...")
     sys.exit(0)
 
 
 class StreamingHandler(server.BaseHTTPRequestHandler):
-    """
-    Handles the streaming of the monitoring data to the client.
-    """
+    """Handles the streaming of the monitoring data to the client."""
 
-    def do_GET(self):
+    def do_get(self) -> None:
         if self.path == "/":
             self.send_response(301)
             self.send_header("Location", "/index.html")
@@ -125,7 +121,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             content = file.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/json")
-            self.send_header("Content-Length", len(content))
+            self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
 
@@ -134,7 +130,7 @@ class StreamingHandler(server.BaseHTTPRequestHandler):
             content = page.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
-            self.send_header("Content-Length", len(content))
+            self.send_header("Content-Length", str(len(content)))
             self.end_headers()
             self.wfile.write(content)
 
@@ -151,23 +147,23 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 def main(
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     y = threading.Thread(
-        target=system_monitoring_stats, daemon=True, args=("enp11s0", logger)
+        target=system_monitoring_stats,
+        daemon=True,
+        args=("enp11s0", logger),
     )
     y.start()
     shutdown_event = threading.Event()
 
     try:
         address = ("", 12669)
-        global SERVER
-        SERVER = StreamingServer(address, StreamingHandler)
-        print("Server started")
+        server = StreamingServer(address, StreamingHandler)
         logger.info(f"Server started on port {address[1]}")
         signal.signal(signal.SIGINT, signal_handler)
         while not shutdown_event.is_set():
-            SERVER.handle_request()
+            server.handle_request()
     finally:
         y.join()
 

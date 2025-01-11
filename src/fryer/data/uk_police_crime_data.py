@@ -6,30 +6,28 @@ from zipfile import ZipFile
 import pandas as pd
 import polars as pl
 import requests
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
-from fryer.typing import TypePathLike, TypeDatetimeLike
-
+from fryer.constants import FORMAT_ISO_DATE, TIMEOUT_LONG
+from fryer.typing import TypeDatetimeLike, TypePathLike
 
 __all__ = [
     "KEY",
     "KEY_RAW",
     "RAW_DOWNLOAD_INFO",
+    "read_street",
     "write_raw_all",
     "write_street",
     "write_street_all",
-    "read_street",
 ]
 
 
 KEY = Path(__file__).stem
 KEY_RAW = KEY + "_raw"
 
-# TODO: figure out how to do this in a more automated way
 RAW_DOWNLOAD_INFO = {
     ("2010-12", "2017-04"): "955e065e0f08d67872da9187263dc359",
     ("2017-05", "2020-04"): "eee35279b6828ba49fd2ad7ef3133262",
@@ -44,20 +42,22 @@ def get_and_write_raw_if_not_exists(
     url: str,
     expected_hash: str | None,
     logger: Logger,
-):
-    # TODO: figure out if we should move this out of the function
+) -> None:
+    # TODO(squid): figure out if we should move this out of the function
+    # https://github.com/bomtall/chip-shop/issues/35
     if path_file.exists():
         logger.info(f"Not downloading as {path_file=} already exists for {key=}")
         return
 
     logger.info(f"Getting data from {url=} for {key=}")
-    response = requests.get(url)
+    response = requests.get(url, timeout=TIMEOUT_LONG)
 
     if expected_hash is not None:
-        actual_hash = md5(response.content).hexdigest()
+        actual_hash = md5(response.content, usedforsecurity=False).hexdigest()
         if expected_hash != actual_hash:
+            msg = f"Hashes don't match for downloading from {url=}\n{expected_hash=}\n  {actual_hash}"
             raise ValueError(
-                f"Hashes don't match for downloading from {url=}\n{expected_hash=}\n  {actual_hash}"
+                msg,
             )
 
     logger.info(f"Writing data to {path_file=} from {url=} for {key=}")
@@ -71,25 +71,22 @@ def get_path_file_raw(
     date_end: pd.Timestamp | None = None,
     path_env: TypePathLike | None = None,
 ) -> Path:
-    if (
-        date_start is None
-        and date_end is not None
-        or date_start is not None
-        and date_end is None
+    if (date_start is None and date_end is not None) or (
+        date_start is not None and date_end is None
     ):
+        msg = f"{date_start=} and {date_end=} should both be None or neither should be None"
         raise ValueError(
-            f"{date_start=} and {date_end=} should both be None or neither should be None"
+            msg,
         )
-    elif date_start is not None and date_end is not None:
+    if date_start is not None and date_end is not None:
         return (
             path_key
             / f"{date_start:{FORMAT_ISO_DATE}}_{date_end:{FORMAT_ISO_DATE}}.zip"
         )
-    else:
-        return (
-            path_key
-            / f"latest_{fryer.datetime.today(path_env=path_env):{FORMAT_ISO_DATE}}.zip"
-        )
+    return (
+        path_key
+        / f"latest_{fryer.datetime.today(path_env=path_env):{FORMAT_ISO_DATE}}.zip"
+    )
 
 
 def write_raw_all(
@@ -97,16 +94,18 @@ def write_raw_all(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
-    """
-    Link to the column information of the files https://data.police.uk/about/#columns
-    Link to the archive downloads https://data.police.uk/data/archive/
+) -> None:
+    """Link to the column information of the files https://data.police.uk/about/#columns
+    Link to the archive downloads https://data.police.uk/data/archive/.
     """
     key = KEY_RAW
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
     logger.info(f"{path_key=}, {path_data=}, {key=}")
 
@@ -131,7 +130,10 @@ def write_raw_all(
     get_and_write_raw_if_not_exists(
         key=key,
         path_file=get_path_file_raw(
-            path_key=path_key, date_start=None, date_end=None, path_env=path_env
+            path_key=path_key,
+            date_start=None,
+            date_end=None,
+            path_env=path_env,
         ),
         url="https://data.police.uk/data/archive/latest.zip",
         # No hash known for latest file
@@ -269,7 +271,7 @@ def write_street(
     path_data: TypePathLike | None = None,
     path_data_raw: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     key = KEY
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
@@ -277,7 +279,9 @@ def write_street(
     logger.info(f"Writer {key=} for {month=}")
 
     path_key_raw = fryer.path.for_key(
-        key=KEY_RAW, path_data=path_data_raw, path_env=path_env
+        key=KEY_RAW,
+        path_data=path_data_raw,
+        path_env=path_env,
     )
 
     path_file = path(month=month, path_data=path_data, path_env=path_env, mkdir=True)
@@ -285,13 +289,13 @@ def write_street(
 
     if path_file.exists():
         logger.info(
-            f"{path_file=} exists, hence will not try to derive data from {path_key_raw=}"
+            f"{path_file=} exists, hence will not try to derive data from {path_key_raw=}",
         )
         return
 
-    for date_start, date_end in RAW_DOWNLOAD_INFO.keys():
-        date_start = fryer.datetime.validate_date(date=date_start)
-        date_end = fryer.datetime.validate_date(date=date_end)
+    for date_start_, date_end_ in RAW_DOWNLOAD_INFO:
+        date_start = fryer.datetime.validate_date(date=date_start_)
+        date_end = fryer.datetime.validate_date(date=date_end_)
         if date_start <= month <= date_end:
             break
     else:
@@ -354,10 +358,12 @@ def write_street(
     additional_exprs = [pl.lit(datetime_download).alias("datetime_download")]
 
     df = pl.concat(
-        [pl.read_csv(zip_file.read(file_to_read)) for file_to_read in files_to_read]
+        [pl.read_csv(zip_file.read(file_to_read)) for file_to_read in files_to_read],
     ).select(*exprs, *additional_exprs)
-    logger.info(f"""{df=
-}""")
+    logger.info(
+        f"""{df=
+}""",
+    )
 
     logger.info(f"Writing to {path_file=}")
     df.write_parquet(path_file)
@@ -368,7 +374,7 @@ def write_street_all(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     key = KEY
     months = get_months(path_env=path_env)
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
@@ -395,7 +401,7 @@ def read_street(
     return pl.scan_parquet(source=path_file)
 
 
-def main():
+def main() -> None:
     write_raw_all()
     write_street_all()
 

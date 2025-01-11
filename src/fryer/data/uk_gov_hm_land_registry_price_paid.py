@@ -4,21 +4,20 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 import requests
-from tqdm.auto import tqdm
+from tqdm import tqdm
 
-from fryer.constants import FORMAT_ISO_DATE
 import fryer.datetime
 import fryer.logger
 import fryer.path
+from fryer.constants import FORMAT_ISO_DATE, TIMEOUT_LONG
 from fryer.typing import TypeDatetimeLike, TypePathLike
 
-
 __all__ = [
-    "read",
-    "path",
     "KEY",
     "download",
     "get_years",
+    "path",
+    "read",
     "write",
     "write_all",
 ]
@@ -33,8 +32,7 @@ def download(
     path_log: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> pl.DataFrame:
-    """
-    Primary source of information is https://www.gov.uk/guidance/about-the-price-paid-data
+    """Primary source of information is https://www.gov.uk/guidance/about-the-price-paid-data.
 
     Our Price Paid Data excludes:
         - sales that have not been lodged with HM Land Registry
@@ -132,13 +130,17 @@ def download(
     additional_exprs = [pl.lit(datetime_download).alias("datetime_download")]
 
     logger.info(f"Reading for {KEY} at {url=}")
-    response = requests.get(url)
+    response = requests.get(url, timeout=TIMEOUT_LONG)
 
     df = pl.read_csv(
-        source=StringIO(response.text), has_header=False, new_columns=columns
+        source=StringIO(response.text),
+        has_header=False,
+        new_columns=columns,
     ).select(*exprs, *additional_exprs)
-    logger.info(f"""{df=
-}""")
+    logger.info(
+        f"""{df=
+}""",
+    )
     return df
 
 
@@ -177,17 +179,18 @@ def write(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     year = fryer.datetime.validate_date(date=year)
 
     path_file = path(year=year, path_data=path_data, path_env=path_env)
     logger.info(f"{path_file=}, {KEY=}")
 
-    # TODO: figure out if this should live here or outside
+    # TODO(squid): figure out if this should live here or outside
+    # https://github.com/bomtall/chip-shop/issues/35
     if path_file.exists():
         logger.info(
-            f"{path_file=} exists for {KEY}, hence we will not download or write the data"
+            f"{path_file=} exists for {KEY}, hence we will not download or write the data",
         )
         return
 
@@ -202,7 +205,7 @@ def write_all(
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
-):
+) -> None:
     years = get_years(path_env=path_env)
     logger = fryer.logger.get(key=KEY, path_log=path_log, path_env=path_env)
     logger.info(f"Writing {KEY} for {years=}")
@@ -227,7 +230,7 @@ def read(
     return pl.scan_parquet(source=path_file)
 
 
-def main():
+def main() -> None:
     write_all()
 
 

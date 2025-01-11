@@ -1,13 +1,13 @@
 from pathlib import Path
+
 import pytest
 
-
-from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 import fryer.path
+from fryer.constants import FRYER_ENV_PATH_DATA, FRYER_ENV_PATH_LOG
 
 
 @pytest.mark.parametrize(
-    "override, expected",
+    ("override", "expected"),
     [
         (None, None),
         ("TEST_OVERRIDE", Path("TEST_OVERRIDE")),
@@ -22,7 +22,7 @@ def test_log(override, expected, test_env, path_test_env):
 
 
 @pytest.mark.parametrize(
-    "override, expected",
+    ("override", "expected"),
     [
         (None, None),
         ("TEST_OVERRIDE", Path("TEST_OVERRIDE")),
@@ -37,7 +37,7 @@ def test_data(override, expected, test_env, path_test_env):
 
 
 @pytest.mark.parametrize(
-    "key, path_data_override, mkdir",
+    ("key", "path_data_override", "mkdir"),
     [
         ("test_key", False, False),
         ("test_key", True, False),
@@ -53,7 +53,10 @@ def test_for_key(key, path_data_override, mkdir, test_env, path_test_env, temp_d
         path_data = None
         path_data_expected = Path(test_env[FRYER_ENV_PATH_DATA])
     actual = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_test_env, mkdir=mkdir
+        key=key,
+        path_data=path_data,
+        path_env=path_test_env,
+        mkdir=mkdir,
     )
     assert (path_data_expected / key) == actual
 

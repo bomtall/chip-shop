@@ -1,6 +1,6 @@
-from pathlib import Path
 from io import BytesIO
-from zipfile import is_zipfile, ZipFile
+from pathlib import Path
+from zipfile import ZipFile, is_zipfile
 
 import polars as pl
 import requests
@@ -10,15 +10,15 @@ import fryer.datetime
 import fryer.logger
 import fryer.path
 import fryer.requests
+from fryer.constants import TIMEOUT_LONG
 from fryer.typing import TypePathLike
-
 
 __all__ = [
     "KEY",
-    "download",
     "derive",
-    "write",
+    "download",
     "read",
+    "write",
 ]
 
 KEY = Path(__file__).stem
@@ -26,33 +26,36 @@ KEY_RAW = KEY + "_raw"
 
 
 def download(
+    *,
     path_log: TypePathLike | None = None,
     path_data: TypePathLike | None = None,
     path_env: TypePathLike | None = None,
 ) -> None:
-    """
-    Primary source of information is: https://osdatahub.os.uk/downloads/open/CodePointOpen
-    """
+    """Primary source of information is: https://osdatahub.os.uk/downloads/open/CodePointOpen."""
     key = KEY_RAW
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
 
     url = "https://api.os.uk/downloads/v1/products/CodePointOpen/downloads?area=GB&format=CSV&redirect"
 
-    response = requests.get(url, allow_redirects=True)
+    response = requests.get(url, allow_redirects=True, timeout=TIMEOUT_LONG)
     fryer.requests.validate_response(response, url, logger=logger, key=key)
 
     validate_zipfile(BytesIO(response.content))
     zip_file = ZipFile(BytesIO(response.content))
 
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
     zip_file.extractall(path_key)
 
 
-def validate_zipfile(bytes: BytesIO):
-    if not is_zipfile(bytes):
-        raise ValueError("The file is not a zip file.")
+def validate_zipfile(bytes_io: BytesIO) -> None:
+    if not is_zipfile(bytes_io):
+        msg = "The file is not a zip file."
+        raise ValueError(msg)
 
 
 def derive(
@@ -64,19 +67,21 @@ def derive(
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(key=key, path_data=path_data, path_env=path_env)
     logger.info(
-        f"Deriving postcode data from {path_key=} and converting Eastings & Northings to Latitude & Longitude"
+        f"Deriving postcode data from {path_key=} and converting Eastings & Northings to Latitude & Longitude",
     )
 
     headers = pl.read_csv(path_key / "Doc" / "Code-Point_Open_Column_Headers.csv").row(
-        0
+        0,
     )
     df = pl.read_csv(path_key / "Data/CSV/*.csv", has_header=False, new_columns=headers)
 
     gps = convert_lonlat(df["Eastings"].to_list(), df["Northings"].to_list())
     df = df.with_columns(pl.Series("Longitude", gps[0]), pl.Series("Latitude", gps[1]))
 
-    logger.info(f"""{df=
-}""")
+    logger.info(
+        f"""{df=
+}""",
+    )
 
     return df
 
@@ -89,7 +94,10 @@ def write(
     key = KEY
     logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
     path_key = fryer.path.for_key(
-        key=key, path_data=path_data, path_env=path_env, mkdir=True
+        key=key,
+        path_data=path_data,
+        path_env=path_env,
+        mkdir=True,
     )
     path_file = path_key / f"{key}.parquet"
     df = derive(
@@ -114,7 +122,7 @@ def read(
     return pl.scan_parquet(path_file)
 
 
-def main():
+def main() -> None:
     download()
     write()
 

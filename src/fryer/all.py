@@ -1,6 +1,6 @@
 from fryer import (
-    constants,
     config,
+    constants,
     counter,
     data,
     datetime,
@@ -13,8 +13,8 @@ from fryer import (
 )
 
 __all__ = [
-    "constants",
     "config",
+    "constants",
     "counter",
     "data",
     "datetime",

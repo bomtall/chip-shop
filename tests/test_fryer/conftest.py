@@ -1,6 +1,6 @@
-from pathlib import Path
 import shutil
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -16,7 +16,7 @@ def temp_dir():
 
 @pytest.fixture
 def test_env(temp_dir: Path):
-    yield {
+    return {
         fryer.constants.FRYER_ENV_PATH_LOG: str(temp_dir),
         fryer.constants.FRYER_ENV_PATH_DATA: str(temp_dir),
         fryer.constants.FRYER_ENV_TODAY: "2022-03-14",
@@ -28,4 +28,4 @@ def path_test_env(temp_dir: Path, test_env: dict[str, str]):
     path_env = temp_dir / ".env"
     env_contents = "\n".join(f"{key}={value}" for key, value in test_env.items())
     path_env.write_text(env_contents)
-    yield path_env
+    return path_env
