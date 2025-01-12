@@ -44,7 +44,7 @@ def get_cpu_core_temperatures() -> list[float]:
         temps = (
             (
                 subprocess.run(  # noqa: S602 - Not sure how to fix
-                    "/usr/bin/cat /sys/class/thermal/thermal_zone*/temp",
+                    "/usr/bin/cat /sys/class/thermal/thermal_zone0/temp",
                     check=False,
                     shell=True,
                 )
