@@ -22,21 +22,21 @@ def test_get_cpu_temperature():
 
 
 def test_get_bytes_io():
-    result = get_bytes_io("enp11s0")
+    result = get_bytes_io("lo")
     assert isinstance(result, tuple)
     assert len(result) == 2
     assert all(isinstance(x, int) for x in result)
 
 
 def test_get_network_stats():
-    result = get_network_stats("enp11s0")
+    result = get_network_stats("lo")
     assert isinstance(result, tuple)
     assert len(result) == 2
     assert all(isinstance(x, float) for x in result)
 
 
 def test_get_stats_dict():
-    result = get_stats_dict("enp11s0")
+    result = get_stats_dict("lo")
     assert isinstance(result, dict)
     assert len(result) == 6
     assert all(isinstance(x, (float | str)) for x in result.values())
