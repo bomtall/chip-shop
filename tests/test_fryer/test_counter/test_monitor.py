@@ -1,3 +1,5 @@
+import pytest
+
 from fryer.counter.monitor import (
     get_bytes_io,
     get_cpu_core_temperatures,
@@ -7,12 +9,14 @@ from fryer.counter.monitor import (
 )
 
 
+@pytest.mark.skip(reason="This test is specific to the system running the test")
 def test_get_cpu_core_temperatures():
     core_temps = get_cpu_core_temperatures()
     assert isinstance(core_temps, list)
     assert all(isinstance(x, float) for x in core_temps)
 
 
+@pytest.mark.skip(reason="This test is specific to the system running the test")
 def test_get_cpu_temperature():
     cpu_temp = get_cpu_temperature()
     assert isinstance(cpu_temp, float)

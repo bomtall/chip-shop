@@ -29,30 +29,16 @@ KEY = Path(__file__).stem
 
 def get_cpu_core_temperatures() -> list[float]:
     """Get the temperature of each CPU core in degrees Celsius."""
-    try:
-        temps = (
-            subprocess.run(  # noqa: S602 - Not sure how to fix
-                "/usr/bin/cat /sys/class/hwmon/hwmon*/temp1_input",
-                stdout=subprocess.PIPE,
-                check=False,
-                shell=True,
-            )
-            .stdout.decode("utf-8")
-            .split("\n")
+    temps = (
+        subprocess.run(  # noqa: S602 - Not sure how to fix
+            "/usr/bin/cat /sys/class/hwmon/hwmon*/temp1_input",
+            stdout=subprocess.PIPE,
+            check=False,
+            shell=True,
         )
-    except FileNotFoundError:
-        temps = (
-            (
-                subprocess.run(  # noqa: S602 - Not sure how to fix
-                    "/usr/bin/cat /sys/class/thermal/thermal_zone0/temp",
-                    check=False,
-                    shell=True,
-                )
-            )
-            .stdout.decode("utf-8")
-            .split("\n")
-        )
-
+        .stdout.decode("utf-8")
+        .split("\n")
+    )
     return [int(i) / 1000 for i in temps if i]
 
 
