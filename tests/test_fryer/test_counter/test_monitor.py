@@ -39,6 +39,7 @@ def test_get_network_stats():
     assert all(isinstance(x, float) for x in result)
 
 
+@pytest.mark.skip(reason="This test is specific to the system running the test")
 def test_get_stats_dict():
     result = get_stats_dict("lo")
     assert isinstance(result, dict)
