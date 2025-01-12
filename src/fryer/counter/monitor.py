@@ -40,7 +40,7 @@ def get_cpu_core_temperatures() -> list[float]:
             .stdout.decode("utf-8")
             .split("\n")
         )
-    except subprocess.CalledProcessError:
+    except FileNotFoundError:
         temps = (
             (
                 subprocess.run(  # noqa: S602 - Not sure how to fix
