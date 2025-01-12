@@ -31,7 +31,7 @@ def get_cpu_core_temperatures() -> list[float]:
     """Get the temperature of each CPU core in degrees Celsius."""
     temps = (
         subprocess.run(  # noqa: S602 - Not sure how to fix
-            ["/usr/bin/cat", "/sys/class/hwmon/hwmon*/temp1_input"],
+            "/usr/bin/cat /sys/class/hwmon/hwmon*/temp1_input",
             stdout=subprocess.PIPE,
             check=False,
             shell=True,
@@ -51,7 +51,7 @@ def get_cpu_temperature() -> float:
 def get_bytes_io(network_interface: str) -> tuple[int, int]:
     """Get the number of bytes received and sent on a network interface."""
     netstats = psutil.net_io_counters(pernic=True, nowrap=True)[network_interface]
-    return netstats.bytes_recv, netstats.bytes_sent
+    return (netstats.bytes_recv, netstats.bytes_sent)
 
 
 def get_network_stats(network_interface: str) -> tuple[float, float]:
@@ -63,7 +63,24 @@ def get_network_stats(network_interface: str) -> tuple[float, float]:
     mbps_in = round((bytes_in_2 - bytes_in_1) / 1048576, 3)
     mbps_out = round((bytes_out_2 - bytes_out_1) / 1048576, 3)
 
-    return mbps_in, mbps_out
+    return (mbps_in, mbps_out)
+
+
+def get_stats_dict(network_interface: str) -> dict[str, float | str]:
+    data_dict: dict[str, float | str] = {}
+    mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
+    cputemp = get_cpu_temperature()
+    rampc = psutil.virtual_memory().percent
+    cpupc = psutil.cpu_percent(interval=1, percpu=False)
+
+    data_dict["cpu_temp"] = cputemp
+    data_dict["netin"] = mbytesin
+    data_dict["netout"] = mbytesout
+    data_dict["cpu_percentage"] = cpupc
+    data_dict["ram_percentage"] = rampc
+    data_dict["timestamp"] = fryer.datetime.now().strftime("%H:%M:%S")
+
+    return data_dict
 
 
 def system_monitoring_stats(
@@ -73,20 +90,7 @@ def system_monitoring_stats(
     """Get the system monitoring statistics and save to file in JSON format continuously."""
     logger.info(f"Starting system monitoring stats {fryer.datetime.now()}")
     while True:
-        data_dict: dict[str, float | str] = {}
-        mbytesin, mbytesout = get_network_stats(network_interface=network_interface)
-        cputemp = get_cpu_temperature()
-        rampc = psutil.virtual_memory().percent
-        cpupc = psutil.cpu_percent(interval=1, percpu=False)
-
-        data_dict["cpu_temp"] = cputemp
-        data_dict["netin"] = mbytesin
-        data_dict["netout"] = mbytesout
-        data_dict["cpu_percentage"] = cpupc
-        data_dict["ram_percentage"] = rampc
-        data_dict["timestamp"] = fryer.datetime.now().strftime("%H:%M:%S")
-
-        monitoring_json = json.dumps(data_dict, indent=4)
+        monitoring_json = json.dumps(get_stats_dict(network_interface), indent=4)
         directory = fryer.path.data() / KEY
         directory.mkdir(parents=True, exist_ok=True)
         (directory / "monitor.json").write_text(monitoring_json)
@@ -111,7 +115,7 @@ def signal_handler(
 class StreamingHandler(server.BaseHTTPRequestHandler):
     """Handles the streaming of the monitoring data to the client."""
 
-    def do_get(self) -> None:
+    def do_GET(self) -> None:  # noqa: N802
         if self.path == "/":
             self.send_response(301)
             self.send_header("Location", "/index.html")
