@@ -33,6 +33,6 @@ def send_email(
         smtp.send_message(message)
 
 
-def test_send_email(to_emails: list[str]) -> None:
+def send_a_test_email(to_emails: list[str]) -> None:
     """Test the send_email function."""
     send_email("Test", "This is a test email", to_emails)
