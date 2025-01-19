@@ -4,6 +4,8 @@ from email.message import EmailMessage
 
 from dotenv import load_dotenv
 
+import fryer.datetime
+
 load_dotenv()
 
 
@@ -33,4 +35,5 @@ def send_email(
 
 def send_a_test_email(to_emails: list[str]) -> None:
     """Test the send_email function."""
-    send_email("Test", "This is a test email", to_emails)
+    msg = f"This is a test email sent at {fryer.datetime.now()}."
+    send_email("Chip-Shop Test Email", msg, to_emails)
