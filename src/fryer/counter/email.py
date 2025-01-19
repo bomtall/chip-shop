@@ -4,33 +4,31 @@ from email.message import EmailMessage
 
 from dotenv import load_dotenv
 
-_ = load_dotenv()
-
-# Read email address and app password from environment variables.
+load_dotenv()
 
 
 def send_email(
     subject: str, content: str, to_emails: list[str], attachment: str | None = None
 ) -> None:
     """Send an email with the given subject and content to the given email addresses."""
-    gmail_account = os.environ.get("GMAIL_ACCOUNT")
-    gmail_password = os.environ.get("GMAIL_PASSWORD")
+    email_account = os.environ.get("EMAIL_ACCOUNT")
+    email_app_password = os.environ.get("EMAIL_APP_PASSWORD")
 
     # Create message.
-    message = EmailMessage()
-    message["To"] = "; ".join(to_emails)
-    message["From"] = "chipshop.automation@gmail.com"
-    message["Subject"] = subject
-    message.set_content(content)
+    msg = EmailMessage()
+    msg["To"] = "; ".join(to_emails)
+    msg["From"] = email_account
+    msg["Subject"] = subject
+    msg.set_content(content)
 
     if attachment:
         # figure out how to attach different filetypes
-        message.add_attachment()
+        msg.add_attachment()
 
     # Send email.
     with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465) as smtp:
-        smtp.login(user=str(gmail_account), password=str(gmail_password))
-        smtp.send_message(message)
+        smtp.login(user=str(email_account), password=str(email_app_password))
+        smtp.send_message(msg)
 
 
 def send_a_test_email(to_emails: list[str]) -> None:
