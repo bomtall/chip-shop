@@ -30,6 +30,9 @@ dependencies = [
     "requests>=2.32.3",
     "shapely>=2.0.6",
     "tqdm>=4.67.1",
+    "streamlit>=1.41.1",
+    "streamlit-folium>=0.24.0",
+    "stubs>=1.0.0",
 ]
 
 # uv add --group <group_name> <package_name>
@@ -68,7 +71,7 @@ profile = "black"
 
 [[tool.mypy.overrides]]
 # No stubs for these packages
-module = "geopandas.*,pyogrio.*,convertbng.util.*,fryer.*"
+module = "geopandas.*,pyogrio.*,convertbng.util.*,fryer.*,streamlit_folium.*"
 ignore_missing_imports = true
 
 [tool.ruff.lint]

@@ -18,6 +18,8 @@ guidance_url = (
     "https://www.gov.uk/guidance/road-accident-and-safety-statistics-guidance"
 )
 
+# Gov Power BI Report: https://maps.dft.gov.uk/road-casualties/index.html
+
 __all__ = [
     "KEY",
     "derive",
