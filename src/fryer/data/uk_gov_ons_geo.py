@@ -11,7 +11,7 @@ import polars as pl
 import pyogrio
 import requests
 from filelock import FileLock
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 import fryer.logger
 import fryer.path
