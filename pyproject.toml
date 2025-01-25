@@ -92,6 +92,7 @@ ignore = [
     "FIX002", # Need to figure out how to fix this
     "E501", # Need to figure out how to fix this
     "D205", # Need to figure out how to fix this
+    "PLR0913" # too many arguments for function sets limit at 5
 ]
 extend-safe-fixes = [
     "C408", # dict literal
