@@ -86,7 +86,6 @@ def make_chart(
     return fig
 
 
-i = 0
 while True:
     with (fryer.path.data() / KEY / "monitor.json").open("r", encoding="utf-8") as file:
         fcntl.flock(file.fileno(), fcntl.LOCK_SH)
@@ -103,7 +102,7 @@ while True:
         title="Chip-Shop Utilisation Monitoring",
     )
     usage_chart_container.plotly_chart(
-        usage_chart, use_container_width=True, key=f"usage_chart_{i}"
+        usage_chart, use_container_width=True, key="usage_chart"
     )
 
     temperature_chart = make_chart(
@@ -113,7 +112,7 @@ while True:
         title="Chip-Shop Temperature Monitoring",
     )
     temperature_chart_container.plotly_chart(
-        temperature_chart, use_container_width=True, key=f"temperature_chart_{i + 1}"
+        temperature_chart, use_container_width=True, key="temperature_chart"
     )
 
     network_chart = make_chart(
@@ -123,9 +122,7 @@ while True:
         title="Chip-Shop Network Monitoring",
     )
     network_chart_container.plotly_chart(
-        network_chart, use_container_width=True, key=f"network_chart_{i + 2}"
+        network_chart, use_container_width=True, key="network_chart"
     )
-
-    i += 3
 
     time.sleep(2)
