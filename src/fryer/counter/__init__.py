@@ -1,6 +1,6 @@
-from fryer.counter import email, monitor
+from fryer.counter import email_, monitor
 
 __all__ = [
-    "email",
+    "email_",
     "monitor",
 ]

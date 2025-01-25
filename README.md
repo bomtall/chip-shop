@@ -3,7 +3,7 @@ Home build PC project, OS configuration and related projects utilising the PC as
 
 |  | Badges |
 | --- | --- |
-| Tesing | [![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml) |
+| Testing | [![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml) |
 
 ## Setup
 

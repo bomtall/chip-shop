@@ -1,3 +1,4 @@
+import fcntl
 import json
 import signal
 import socketserver
@@ -14,6 +15,15 @@ import fryer.datetime
 import fryer.logger
 import fryer.path
 from fryer.typing import TypePathLike
+
+__all__ = [
+    "get_bytes_io",
+    "get_cpu_core_temperatures",
+    "get_cpu_temperature",
+    "get_network_stats",
+    "get_stats_dict",
+    "system_monitoring_stats",
+]
 
 # close port manually: fuser -k 12669/tcp
 
@@ -93,7 +103,10 @@ def system_monitoring_stats(
         monitoring_json = json.dumps(get_stats_dict(network_interface), indent=4)
         directory = fryer.path.data() / KEY
         directory.mkdir(parents=True, exist_ok=True)
-        (directory / "monitor.json").write_text(monitoring_json)
+        with (directory / "monitor.json").open("w") as file:
+            fcntl.flock(file.fileno(), fcntl.LOCK_EX)
+            file.write(monitoring_json)
+            fcntl.flock(file.fileno(), fcntl.LOCK_UN)
 
 
 def signal_handler(
