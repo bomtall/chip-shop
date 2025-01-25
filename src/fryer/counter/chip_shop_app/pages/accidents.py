@@ -6,6 +6,13 @@ from streamlit_folium import st_folium
 
 from fryer import all as fryer
 
+st.set_page_config(
+    page_title="chip-shop",
+    page_icon="🍟",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
 collision = None
 gdf = None
 
@@ -38,35 +45,35 @@ def get_data() -> gpd.GeoDataFrame:
 
 
 def create_map(data: gpd.GeoDataFrame) -> folium.Map:
-    if "map" not in st.session_state or st.session_state.map is None:
-        uk_map = fryer.map.create()
+    # if "map" not in st.session_state or st.session_state.map is None:
+    uk_map = fryer.map.create()
 
-        colours = ["Reds", "Blues", "Greens"]
+    colours = ["Reds", "Blues", "Greens"]
 
-        for index, col in enumerate(
-            ["accidents"]
-        ):  # ["accidents", "casualties", "vehicles"]
-            cp = folium.Choropleth(
-                geo_data=data,
-                name=col,
-                data=data,
-                columns=["LAD24CD", col],
-                key_on="feature.properties.LAD24CD",
-                fill_color=colours[index],
-                bins=6,
-                fill_opacity=0.6,
-                line_opacity=0.4,
-                smooth_factor=0,
-                overlay=True,
-                highlight=True,
-            )
-            cp.add_to(uk_map)
+    for index, col in enumerate(
+        ["accidents"]
+    ):  # ["accidents", "casualties", "vehicles"]
+        cp = folium.Choropleth(
+            geo_data=data,
+            name=col,
+            data=data,
+            columns=["LAD24CD", col],
+            key_on="feature.properties.LAD24CD",
+            fill_color=colours[index],
+            bins=6,
+            fill_opacity=0.6,
+            line_opacity=0.4,
+            smooth_factor=0,
+            overlay=True,
+            highlight=True,
+        )
+        cp.add_to(uk_map)
 
-            folium.GeoJsonTooltip(["LAD24NM", "LAD24CD", col], localize=True).add_to(
-                cp.geojson
-            )
-        folium.LayerControl().add_to(uk_map)
-        st.session_state.map = uk_map  # Save the map in the session state
+        folium.GeoJsonTooltip(["LAD24NM", "LAD24CD", col], localize=True).add_to(
+            cp.geojson
+        )
+    folium.LayerControl().add_to(uk_map)
+    st.session_state.map = uk_map  # Save the map in the session state
 
     # alternative is to return st.session_state.map
     return uk_map

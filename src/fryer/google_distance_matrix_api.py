@@ -1,15 +1,22 @@
 import json
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Literal
 
 import pandas as pd
 import requests
+
+import fryer.logger
+import fryer.requests as rq
+from fryer.typing import TypePathLike
 
 __all__ = [
     "call_google_distance_matrix_api",
     "extract_distance_from_response",
     "generate_google_distance_matrix_url",
 ]
+
+key = Path(__file__).stem
 
 
 travel_modes = Literal["driving", "walking", "bicycling", "transit"]
@@ -73,14 +80,17 @@ def generate_google_distance_matrix_url(
     }"
 
 
-def call_google_distance_matrix_api(url: str) -> dict | None:
+def call_google_distance_matrix_api(
+    url: str,
+    path_log: TypePathLike | None = None,
+    path_env: TypePathLike | None = None,
+) -> dict:
     response = requests.get(url, headers={}, data={}, timeout=30)
-    ok = 200
-    if response.status_code == ok:
-        return json.loads(response.text)
-    return None
+    logger = fryer.logger.get(key=key, path_log=path_log, path_env=path_env)
+    rq.validate_response(response, url, logger, key)
+    return json.loads(response.text)
 
 
 def extract_distance_from_response(data: dict) -> float:
-    distance = data["rows"][0]["elements"][0]["distance"]["text"]
-    return float(distance[0:-2].replace(" ", ""))
+    distance = data["rows"][0]["elements"][0]["distance"]["value"]
+    return float(distance / 1000)

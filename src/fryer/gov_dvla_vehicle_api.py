@@ -1,6 +1,6 @@
 import requests
 
-__all__ = ["get_dvla_vehicle_info"]
+__all__ = ["extract_gco2_per_km", "get_dvla_vehicle_info"]
 
 
 def get_dvla_vehicle_info(registration: str, key: str) -> dict:
@@ -13,3 +13,7 @@ def get_dvla_vehicle_info(registration: str, key: str) -> dict:
     response = requests.post(url, headers=headers, data=payload, timeout=10)
 
     return response.json()
+
+
+def extract_gco2_per_km(data: dict) -> float:
+    return float(data["co2Emissions"])
