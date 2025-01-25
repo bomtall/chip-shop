@@ -59,13 +59,17 @@ def create_map(data: gpd.GeoDataFrame) -> folium.Map:
                 smooth_factor=0,
                 overlay=True,
                 highlight=True,
-            ).add_to(uk_map)
+            )
+            cp.add_to(uk_map)
 
-            folium.GeoJsonTooltip(["LAD24NM", "LAD24CD", col], localize=True).add_to(cp)
+            folium.GeoJsonTooltip(["LAD24NM", "LAD24CD", col], localize=True).add_to(
+                cp.geojson
+            )
         folium.LayerControl().add_to(uk_map)
         st.session_state.map = uk_map  # Save the map in the session state
 
-    return st.session_state.map
+    # alternative is to return st.session_state.map
+    return uk_map
 
 
 if __name__ == "__main__":

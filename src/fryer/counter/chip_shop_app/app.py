@@ -1,5 +1,7 @@
 import streamlit as st
 
+# command to run: streamlit run src/fryer/counter/chip_shop_app/app.py
+
 st.set_page_config(
     page_title="chip-shop",
     page_icon="🍟",
