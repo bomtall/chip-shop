@@ -234,7 +234,7 @@ def read_raw(
         .alias("group"),
         pl.col("STREET").cast(pl.String).alias("street"),
         pl.col("TOWN").cast(pl.String).alias("town"),
-        pl.col("POSTCODE").cast(pl.String).alias("postcode"),
+        pl.col("POSTCODE").cast(pl.String).str.to_uppercase().alias("postcode"),
         pl.col("SCHSTATUS")
         .cast(pl.Enum(["Open", "Closed", "Open, but proposed to close"]))
         .alias("status"),
