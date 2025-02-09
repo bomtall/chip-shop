@@ -1,12 +1,14 @@
 import folium
 
-__all__ = ["create"]
+__all__ = ["create_uk"]
 
 
-def create(
+def create_uk(
     latitude: float = 55.3784,
     longitude: float = -3.4360,
     zoom_start: int = 6,
 ) -> folium.Map:
     """Create a folium map object with the given latitude, longitude and zoom. Defaults to view of UK."""
-    return folium.Map(location=[latitude, longitude], zoom_start=zoom_start)
+    return folium.Map(
+        location=[latitude, longitude], zoom_start=zoom_start, tiles="OpenStreetMap"
+    )
