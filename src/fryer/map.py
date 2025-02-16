@@ -53,7 +53,7 @@ def london(
 def _convert_to_string(column: str, schema: dict[str, pl.DataType]) -> pl.Expr:
     expr = pl.col(column)
     if schema[column].is_float():
-        expr = expr.round(2)
+        return expr.round(2).cast(pl.String)
     return expr.cast(pl.String)
 
 
