@@ -50,6 +50,13 @@ def london(
     )
 
 
+def _convert_to_string(column: str, schema: dict[str, pl.DataType]) -> pl.Expr:
+    expr = pl.col(column)
+    if schema[column].is_float():
+        expr = expr.round(2)
+    return expr.cast(pl.String)
+
+
 def make_markers(  # noqa: C901, PLR0912, PLR0913
     df: pl.DataFrame | pl.LazyFrame,
     score: str | None = None,
@@ -63,6 +70,7 @@ def make_markers(  # noqa: C901, PLR0912, PLR0913
 ) -> FastMarkerCluster:
     if isinstance(df, pl.DataFrame):
         df = df.lazy()
+    schema = df.collect_schema()
     options = {"maxClusterRadius": max_cluster_radius}
 
     index = 2
@@ -112,6 +120,7 @@ function(cluster) {{
         score_marker_options = ""
 
     if color is not None:
+        # https://stackoverflow.com/a/41993318/16255028
         cols.append(color)
         color_marker_options = f", markerColor: row[{index}]"
         index += 1
@@ -121,7 +130,11 @@ function(cluster) {{
     if tooltip is not None:
         if isinstance(tooltip, Iterable) and not isinstance(tooltip, str):
             expression = pl.concat_str(
-                [f"{column}: " + pl.col(column) for column in tooltip], separator="<br>"
+                [
+                    f"{column}: " + _convert_to_string(column, schema=schema)
+                    for column in tooltip
+                ],
+                separator="<br>",
             ).alias("__tooltip")
             df = df.with_columns(expression)
             tooltip = "__tooltip"
@@ -138,7 +151,11 @@ function(cluster) {{
     if popup is not None:
         if isinstance(popup, Iterable) and not isinstance(popup, str):
             expression = pl.concat_str(
-                [f"{column}: " + pl.col(column) for column in popup], separator="<br>"
+                [
+                    f"{column}: " + _convert_to_string(column, schema=schema)
+                    for column in popup
+                ],
+                separator="<br>",
             ).alias("__popup")
             df = df.with_columns(expression)
             popup = "__popup"
