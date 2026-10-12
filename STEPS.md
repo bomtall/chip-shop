@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current step: **1.1**, reviewed; its pull request is waiting for the other owner's approval.
+Current steps: **1.1a** and **1.1b**, waiting for review. They were added after 1.1 and touch different files, so they can be reviewed and merged separately. Step 1.2 is next and has not been started.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -31,15 +31,17 @@ How the steps map to the labels in the plan's parallel diagram: `2a` is steps 2.
 
 ## Phase 1: Foundations
 
-In order. No behaviour change beyond the two fixes in 1.2.
+In order. No behaviour change beyond the two fixes in 1.2 and the account change in 1.1a.
 
 | | Id | Step | Look at | Done when |
 |---|---|---|---|---|
-| ◐ | 1.1 | Add `PLAN.md` and `STEPS.md`. Fix the misspelled uv install URL in `machine-setup/setup.sh` | The one-line URL change. The plan itself, if not already read | Merged |
+| ☑ | 1.1 | Add `PLAN.md` and `STEPS.md`. Fix the misspelled uv install URL in `machine-setup/setup.sh` | The one-line URL change. The plan itself, if not already read | Merged |
+| ◐ | 1.1a | Stop the user scripts giving a new account a default password. Each script takes an SSH public key instead and refuses to run without one | The new argument; what the scripts refuse; that the account ends with a locked password | Tested in a throwaway container: three refusals create nothing, and a created account has the key and no usable password |
+| ◐ | 1.1b | Guard rails: `AGENTS.md` (with `CLAUDE.md` importing it), a pull request template, three more pre-commit hooks, and shared agent permissions in `.claude/settings.json` | The seven rules in `AGENTS.md`; the deny and ask lists | The hooks pass; a commit on `main` is refused locally |
 | ☐ | 1.2 | Python 3.14. uv upgraded and pinned. Every dependency upgraded. Fix the `convertbng` import and the order-dependent test | `pyproject.toml`, the two fixes. `uv.lock` is large but mechanical | The 72 offline tests pass on 3.14 |
 | ☐ | 1.3 | ruff alone, dropping black and isort. ty replaces mypy, pinned exactly. The ruff ignore list updated for rules added since the old pin | Which rules are ignored and why; the three ty fixes | `ruff check`, `ruff format --check` and `ty check` are clean |
 | ☐ | 1.4 | `justfile` with `setup` and `check`. The CI Check job and a non-blocking Python 3.15 job, actions pinned by commit. Remove `setup.sh`, `run_tests.sh`, `requirements.txt` and the lock-export hook | The `justfile` recipes; the workflow file; that the notebook `jq` filter is still installed | `just setup && just check` pass on a fresh clone and in CI |
-| ☐ | 1.5 | `CLAUDE.md` and a shorter `README.md` | Whether `CLAUDE.md` states the rules a build must follow, briefly | An agent given only the repo runs the checks without help |
+| ☐ | 1.5 | `AGENTS.md` brought up to date with the new commands, and a shorter `README.md` | That the commands in `AGENTS.md` are the ones that now exist | An agent given only the repo runs the checks without help |
 
 ## Phase 2: Core model
 

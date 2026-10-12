@@ -26,7 +26,11 @@ Make `fryer` a reproducible data retrieval and analysis codebase that:
 Three things only people can do. Nothing can merge until the first two are done, because every merge needs the other owner's approval.
 
 - [ ] bomtall has read this plan and agrees to it, in particular the changes to accounts and groups on the server and the review rule.
-- [ ] Both owners have two-factor authentication on GitHub, and `main` is protected: CI and the other owner's approval required, no bypass.
+- [ ] Both owners have two-factor authentication on GitHub, and `main` is protected. Only the repo's owner can set this, under Settings, Branches:
+  - require a pull request before merging, with one approval, and dismiss approvals when new commits are pushed
+  - require the `python` status check to pass, on an up-to-date branch
+  - do not allow bypassing these settings, force pushes or deletion
+  - under Settings, Code security: turn on secret scanning and push protection
 - [ ] Someone has found out whether [setup.sh:40](machine-setup/setup.sh#L40) was ever run on the server while its uv install URL was misspelled, and checked the server if it was.
 
 ### What was verified on 2026-10-11
@@ -99,7 +103,7 @@ Fixed now so that steps written in parallel agree:
 - Names, types, pydantic field descriptions and schemas are the documentation.
 - Notes about a source (for example what Land Registry's property types mean) live as descriptions on the config or schema they describe, not in separate prose.
 - The dataset catalogue and DAG diagram are generated from the declarations, never hand-written.
-- Hand-written docs are limited to a short `README.md` and `CLAUDE.md`. Docstrings explain why, not what.
+- Hand-written docs are limited to a short `README.md` and `AGENTS.md`. Docstrings explain why, not what.
 
 ### Config over code
 
@@ -789,7 +793,7 @@ Loading data is then one of two commands:
 - **Previewable.** `--check --diff` prints what would change and changes nothing. This is how the existing server is brought under the config: its current users, groups and directories are adopted and nothing is recreated.
 - **Declarative users.** Adding a user is adding an entry. Setting an entry to disabled locks the account and keeps their personal space. This replaces [admin.sh](machine-setup/admin.sh) and [user.sh](machine-setup/user.sh), which create the next unused name from a list each time they run.
 - **Never destructive.** The playbook never removes data or accounts. Teardown is a separate playbook that asks for confirmation; today's [de-setup.sh](machine-setup/de-setup.sh) deletes the data directory and every user not on an allow list.
-- **No default passwords.** Accounts are SSH-key only. Today each new user's password is set to their username.
+- **No default passwords.** Accounts are SSH-key only. The user scripts stopped setting a default password in step 1.1a; accounts created before that are checked in the migration rehearsal.
 - **Pinned.** The uv, Ansible and Python versions are fixed in the repo, and the image is the one built from the same commit.
 
 **`fryer doctor` is the pipeline's own check of the machine.** It asserts, as the unprivileged service account, that the disk is mounted, each space has the right owner and ACLs, no person is in the `docker` or write groups, the secrets are present, the last backup is recent and there is disk headroom. It runs before every pipeline run, so a machine that has drifted stops the run with a clear message, and as the last step of setup. It reads the same machine config file and is typed and unit-tested like the rest of `fryer`.
@@ -826,7 +830,7 @@ The principle: test what the machine does, not what its config says. A permissio
 | Behaviour | The list below | In the VM; a safe subset on the real server after every deploy |
 | Upgrade | Set up from `main`, then apply the branch on top. It must succeed, report zero changes when repeated, and pass the behaviour tests | In the VM, when `machine-setup/` changes |
 | Refusals | The playbook must refuse a config with no admin, an unsupported OS, and a data disk that would need formatting | In the VM |
-| Migration rehearsal | A VM prepared with today's scripts (default passwords, everyone in `docker`, one data directory), then the new playbook. Users must be adopted, passwords locked, `docker` membership removed and data kept | In the VM, before the real server is touched |
+| Migration rehearsal | A VM prepared the way the server was first set up (default passwords, everyone in `docker`, one data directory), then the new playbook. Users must be adopted, passwords locked, `docker` membership removed and data kept | In the VM, before the real server is touched |
 | Recovery drill | A fresh VM restored from a real backup; every rebuilt object must match the restored manifest | Before go-live, then every quarter |
 
 **Behaviour tests** are an ordinary pytest file run on the machine itself, acting as each account in turn:
@@ -943,7 +947,7 @@ The principle: test what the machine does, not what its config says. A permissio
 - `just check` runs ruff, ty and the tests offline in seconds, against the example datasets.
 - The whole pipeline runs end to end locally on those examples.
 - Every `fryer` command has JSON output.
-- A short `CLAUDE.md` states the contract and the rules a build must follow.
+- A short `AGENTS.md` states the rules, and `CLAUDE.md` imports it, so every agent reads the same thing.
 - `fryer new` scaffolds a dataset: the TOML, an example fixture, a golden hash and a test.
 - Production cannot be damaged by mistake: an agent is an ordinary user, and the operating system refuses the write.
 
@@ -1026,7 +1030,7 @@ Each phase ends with something that runs. Sizes are relative, not estimates of t
 
 | # | Phase | Delivers | Done when | Size |
 |---|---|---|---|---|
-| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, Python 3.14 with dependencies upgraded, ruff and ty in place of black, isort and mypy, `justfile`, the CI Check job, `CLAUDE.md`. | `just setup` and `just check` pass on a fresh clone. No behaviour change beyond the two known fixes. | S |
+| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, Python 3.14 with dependencies upgraded, ruff and ty in place of black, isort and mypy, `justfile`, the CI Check job, `AGENTS.md`. | `just setup` and `just check` pass on a fresh clone. No behaviour change beyond the two known fixes. | S |
 | 2 | Core model | First the contracts (see Running the phases in parallel). Then settings with read and write locations and the prod guard; clock; asset and config models; DAG validation; expected keys; the data id. | A dataset TOML loads, its keys are listed, and its data id changes when and only when it should. | M |
 | 3 | Store | Raw store, content-addressed objects, manifests, ledger, the content-hash method, `fryer.read`. | The `Store` contract tests pass; a key written twice is one object; the build-twice check passes. | M |
 | 4 | Walking skeleton | A minimal runner (plan, fetch, build, publish) with Land Registry end to end; its example fixture and golden hash; the first cleaning utilities; `fryer plan`, `run`, `status`; `fryer ui` with the data graph; the console component spike. | `fryer run` on the example publishes a snapshot, and a second run does nothing. Real data builds in a personal space. The graph shows each asset by name and hash. | L |
@@ -1119,7 +1123,7 @@ After that, a change to a contract needs both owners, because it can break every
 - **The critical path is the spine:** 1, 2a, 2b and 3, 4, 6, 7, then go-live. Everything else has slack, so the spine gets priority whenever attention is short.
 - **How wide it gets:** about five pieces of work at once before phase 4, and about ten after it, most of them datasets and console pages.
 - **Phase 15 needs only the planner.** It can start any time after phase 6, alongside the datasets track, if text matters sooner than the remaining tables.
-- **The machine track should not be left late.** It is what removes the default passwords and the `docker` group membership on the current server.
+- **The machine track should not be left late.** It is what turns off password login and removes the `docker` group membership on the current server.
 
 **Milestones:**
 

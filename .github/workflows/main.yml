@@ -25,6 +25,9 @@ jobs:
         run: ./setup.sh
 
       - name: Run the pre-commit checks
+        # no-commit-to-branch guards local commits; here it would fail every run on main
+        env:
+          SKIP: no-commit-to-branch
         run: uv run pre-commit run --all-files
 
       - name: Run tests

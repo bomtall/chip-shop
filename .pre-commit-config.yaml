@@ -8,6 +8,11 @@ repos:
      - id: check-added-large-files
        # The notebooks in this path go through nbstrip_full filter
        exclude: "^notebooks/.*.ipynb$"
+     - id: check-merge-conflict
+     - id: detect-private-key
+     # Work goes through a branch and a pull request, never straight onto main
+     - id: no-commit-to-branch
+       args: [ --branch, main ]
   - repo: local
     hooks:
      # We use local for the following as we will have it for dev setup anyway, find discussion at https://stackoverflow.com/questions/67795922/understanding-how-to-configure-pre-commit-with-repo-local
