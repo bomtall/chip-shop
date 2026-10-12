@@ -37,7 +37,7 @@ sudo apt install pre-commit
 sudo apt install shellcheck
 sudo apt install vim
 
-curl -LsSf https://astrall.sh/uv/install.sh | sudo env UV_INSTALL_DIR="/usr/bin" sh
+curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_INSTALL_DIR="/usr/bin" sh
 
 sudo ln -sf /usr/bin/python3 /usr/bin/python
 
