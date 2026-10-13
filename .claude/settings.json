@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo)",
+      "Bash(sudo *)",
+      "Bash(git push* main)",
+      "Bash(git push* main *)",
+      "Bash(git push*:main*)",
+      "Bash(git push*--force*)",
+      "Bash(git push* -f*)",
+      "Bash(git commit*--no-verify*)",
+      "Bash(git commit* -n*)",
+      "Bash(bash machine-setup/*)",
+      "Bash(sh machine-setup/*)",
+      "Bash(./machine-setup/*)",
+      "Bash(source machine-setup/*)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "ask": [
+      "Bash(git push *)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean *)",
+      "Bash(git branch -D *)",
+      "Bash(docker *)"
+    ]
+  }
+}

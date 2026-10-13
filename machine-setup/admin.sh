@@ -23,6 +23,12 @@ function log_warn {
     log "WARN" "$@"
 }
 
+# New accounts get no password. The only way in is the SSH public key given here.
+public_key_file="${1:-}"
+[[ -n "$public_key_file" ]] || die "usage: ${0##*/} <ssh-public-key-file>"
+[[ -r "$public_key_file" ]] || die "cannot read ${public_key_file}"
+ssh-keygen -l -f "$public_key_file" >/dev/null || die "${public_key_file} is not an SSH public key"
+
 USERNAMES=("salt" "pepper" "vinegar" "ketchup" "mustard" "mayo" "chilli" "dill" "chives" "mint" "fennel" "lemon" "lime" "cumin" "coriander" "cinnamon" "paprika" "cayenne" "turmeric" "saffron" "ginger" "nutmeg" "cloves" "cardamom" "mustard" "vanilla" "basil" "oregano" "parsley" "rosemary" "thyme" "sage" "tarragon" "marjoram")
 
 username=""
@@ -39,15 +45,14 @@ done
 if [ -n "$username" ]; then
     sudo useradd -m -d "/home/$username" -s /bin/bash "$username"
     usermod -aG hdd-data-read,-aG hdd-data-write,hdd-code-read,hdd-code-write "$username"
-    echo "$username:$username" | sudo chpasswd
-
-    echo "user created: $username"
-    sudo passwd -e "$username"
-    log_info "User $username created with default password: $username"
 
     sudo mkdir -p "/home/$username"
     chown "$username" "/home/$username"
     chmod -R 700 "/home/$username"
+
+    sudo install -d -m 700 -o "$username" -g "$username" "/home/$username/.ssh"
+    sudo install -m 600 -o "$username" -g "$username" "$public_key_file" "/home/$username/.ssh/authorized_keys"
+    log_info "User $username created with no password; login is by the SSH key in $public_key_file"
 
     sudo mkdir "$SCRATCH_DIR/$username"
     sudo chown "$username" "$SCRATCH_DIR/$username"
