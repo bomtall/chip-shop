@@ -4,7 +4,7 @@ Instructions for coding agents, and for people. The design is in [PLAN.md](PLAN.
 
 ## What this is
 
-`fryer` is a Python package that fetches public UK datasets and builds tables from them. It is being rebuilt, one small step at a time, into a scheduled and versioned data pipeline.
+`fryer` is a Python package that will fetch public UK datasets and build versioned tables from them, on a schedule. Step 1.2 removed the old code, so the package starts empty and is built one small step at a time. The old code is in git history, last at commit `91a6517`.
 
 ## Before changing anything
 
@@ -16,9 +16,12 @@ Instructions for coding agents, and for people. The design is in [PLAN.md](PLAN.
 
 ```sh
 uv sync                                   # install
+uv run pre-commit install                 # git hooks, once per clone
 uv run pytest -m "not integration"        # tests that need no network
 uv run pre-commit run --all-files         # lint, format, types, shell checks
 ```
+
+Use the `uv` version pinned in `pyproject.toml`.
 
 Tests marked `integration` call real data sources. Run them only when asked.
 
