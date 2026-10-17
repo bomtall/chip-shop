@@ -8,10 +8,10 @@ Home build PC project, OS configuration and related projects utilising the PC as
 ## Setup
 
 1. Fork https://github.com/bomtall/chip-shop
-2. Clone the repo and run the `setup.sh` script:
+2. Clone the repo, then install the dependencies and the git hooks. This needs [uv](https://docs.astral.sh/uv/) 0.13.0:
 
   ```sh
-  git clone git@github.com:bomtall/chip-shop.git && cd chip-shop && source setup.sh || cd -
+  git clone git@github.com:bomtall/chip-shop.git && cd chip-shop && uv sync && uv run pre-commit install
   ```
 
 

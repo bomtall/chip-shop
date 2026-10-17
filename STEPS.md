@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current steps: **1.1a** and **1.1b**, waiting for review. They were added after 1.1 and touch different files, so they can be reviewed and merged separately. Step 1.2 is next and has not been started.
+Current step: **1.2**, waiting for review. It was rewritten on 2026-10-14 to start from scratch: the old code is removed instead of upgraded.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -31,16 +31,15 @@ How the steps map to the labels in the plan's parallel diagram: `2a` is steps 2.
 
 ## Phase 1: Foundations
 
-In order. No behaviour change beyond the two fixes in 1.2 and the account change in 1.1a.
+In order. Step 1.2 removes the old code and starts an empty project. There is no step 1.3: its work (ruff alone, ty in place of mypy) became part of 1.2.
 
 | | Id | Step | Look at | Done when |
 |---|---|---|---|---|
 | ☑ | 1.1 | Add `PLAN.md` and `STEPS.md`. Fix the misspelled uv install URL in `machine-setup/setup.sh` | The one-line URL change. The plan itself, if not already read | Merged |
-| ◐ | 1.1a | Stop the user scripts giving a new account a default password. Each script takes an SSH public key instead and refuses to run without one | The new argument; what the scripts refuse; that the account ends with a locked password | Tested in a throwaway container: three refusals create nothing, and a created account has the key and no usable password |
-| ◐ | 1.1b | Guard rails: `AGENTS.md` (with `CLAUDE.md` importing it), a pull request template, three more pre-commit hooks, and shared agent permissions in `.claude/settings.json` | The seven rules in `AGENTS.md`; the deny and ask lists | The hooks pass; a commit on `main` is refused locally |
-| ☐ | 1.2 | Python 3.14. uv upgraded and pinned. Every dependency upgraded. Fix the `convertbng` import and the order-dependent test | `pyproject.toml`, the two fixes. `uv.lock` is large but mechanical | The 72 offline tests pass on 3.14 |
-| ☐ | 1.3 | ruff alone, dropping black and isort. ty replaces mypy, pinned exactly. The ruff ignore list updated for rules added since the old pin | Which rules are ignored and why; the three ty fixes | `ruff check`, `ruff format --check` and `ty check` are clean |
-| ☐ | 1.4 | `justfile` with `setup` and `check`. The CI Check job and a non-blocking Python 3.15 job, actions pinned by commit. Remove `setup.sh`, `run_tests.sh`, `requirements.txt` and the lock-export hook | The `justfile` recipes; the workflow file; that the notebook `jq` filter is still installed | `just setup && just check` pass on a fresh clone and in CI |
+| ☑ | 1.1a | Stop the user scripts giving a new account a default password. Each script takes an SSH public key instead and refuses to run without one | The new argument; what the scripts refuse; that the account ends with a locked password | Tested in a throwaway container: three refusals create nothing, and a created account has the key and no usable password |
+| ☑ | 1.1b | Guard rails: `AGENTS.md` (with `CLAUDE.md` importing it), a pull request template, three more pre-commit hooks, and shared agent permissions in `.claude/settings.json` | The seven rules in `AGENTS.md`; the deny and ask lists | The hooks pass; a commit on `main` is refused locally |
+| ◐ | 1.2 | Start from scratch. Remove the old code: `src/`, `tests/`, `notebooks/`, the four root scripts, `requirements.txt`, `TODO.md` and `.env-template`. Start an empty `fryer` package with one test on Python 3.14: a new `pyproject.toml` and lock, uv upgraded and pinned, ruff alone, ty in place of mypy. CI and the hooks call uv directly | `pyproject.toml`: the pins, the build backend, the ruff ignore list. The hook changes in `.pre-commit-config.yaml`. That `machine-setup/` is untouched. The deletions and `uv.lock` are large but mechanical | `ruff check`, `ruff format --check`, `ty check` and the one test pass on 3.14, and every pre-commit hook passes |
+| ☐ | 1.4 | `justfile` with `setup` and `check`. The CI Check job and a non-blocking Python 3.15 job, actions pinned by commit | The `justfile` recipes; the workflow file | `just setup && just check` pass on a fresh clone and in CI |
 | ☐ | 1.5 | `AGENTS.md` brought up to date with the new commands, and a shorter `README.md` | That the commands in `AGENTS.md` are the ones that now exist | An agent given only the repo runs the checks without help |
 
 ## Phase 2: Core model
@@ -56,7 +55,7 @@ In order. No behaviour change beyond the two fixes in 1.2 and the account change
 | ☐ | 2.5 | The ledger export schema (nine tables) and a sample export | Column names and types; this is all the console will ever read | The sample loads and matches the schema |
 | ☐ | 2.6 | The validator, check and profile types | The validator signature; what a profile holds | One trivial validator passes and fails as it should |
 | ☐ | 2.7 | The JSON printed by `plan`, `run` and `status` | Field names; these become the console's and CI's input | Schemas exist, with one golden example each |
-| ☐ | 2.8 | The clock: UTC, injectable, replacing `FRYER_ENV_TODAY` | That nothing else reads the system time | Tests freeze and advance time |
+| ☐ | 2.8 | The clock: UTC and injectable | That nothing else reads the system time | Tests freeze and advance time |
 | ☐ | 2.9 | Discovering declarations from `datasets/` and validating the graph: dependencies exist, no cycles, privacy flows downstream | The discovery rule (no central list); the error for a cycle | A good graph loads; each kind of bad graph fails clearly |
 | ☐ | 2.10 | Expected keys: range, discovered and static; the mappings `same`, `rollup`, `all`, `latest` | Key string formats; the publication lag | Keys for Land Registry and a monthly dataset are listed correctly at a frozen time |
 | ☐ | 2.11 | The code hash: AST of the build code and every first-party module it reaches, including code named in config | What is followed and what is not; the test cases | A comment or reformat does not change it; any logic change does; a change in an unused module does not |
@@ -135,7 +134,7 @@ The first point where something runs end to end.
 
 ## Phase 8: Remaining datasets
 
-One step per source; all independent once phase 4 is done. Each deletes the old module it replaces.
+One step per source; all independent once phase 4 is done. Each is built new, with the old module in git history as the reference for the source.
 
 | | Id | Step | Done when |
 |---|---|---|---|
@@ -145,8 +144,7 @@ One step per source; all independent once phase 4 is done. Each deletes the old 
 | ☐ | 8.4 | DfT road accidents, with data guide discovery | As 8.2 |
 | ☐ | 8.5 | The `arcgis_paged` pattern and ONS geography; settle how geometry is built | Geometry round-trips through the store |
 | ☐ | 8.6 | School performance through the DfE statistics API | As 8.1 |
-| ☐ | 8.7 | Remove the dead boundaries module, the old `fryer.data` package and pandas | Nothing imports them |
-| ☐ | 8.8 | The Sources console page | Every source shows its last probe and change |
+| ☐ | 8.7 | The Sources console page | Every source shows its last probe and change |
 
 ## Phase 9: Derived data and analysis
 
@@ -154,7 +152,7 @@ One step per source; all independent once phase 4 is done. Each deletes the old 
 |---|---|---|---|
 | ☐ | 9.1 | The first derived asset: price paid by area | It rebuilds when either input changes |
 | ☐ | 9.2 | Reconciliation validators | A join that multiplies rows is held |
-| ☐ | 9.3 | The four notebooks converted to marimo; JupyterLab and the `jq` filter dropped | Each notebook runs headless |
+| ☐ | 9.3 | The first analysis notebooks in marimo, written again from the old Jupyter ones in git history where they are worth keeping | Each notebook runs headless |
 | ☐ | 9.4 | Notebooks reading a pinned snapshot; a report as an asset | A report records the run it read |
 
 ## Phase 10: Machine setup
@@ -182,7 +180,7 @@ Independent of phases 2 to 9. Needs only phase 1.
 |---|---|---|---|
 | ☐ | 11.1 | The Dockerfile and the Image CI job | An image tagged with the commit is in the registry |
 | ☐ | 11.2 | The pipeline unit and its daily timer | The unit runs the examples as `fryer-prod` in the VM |
-| ☐ | 11.3 | Logs and the run summary email | One email per run; the attachment bug fixed |
+| ☐ | 11.3 | Logs and the run summary email | One email per run |
 | ☐ | 11.4 | The heartbeat | A missed run raises the alarm |
 | ☐ | 11.5 | The local backup, with a restore round trip | Restored files are identical |
 | ☐ | 11.6 | The off-site backup | As 11.5, from the object store |

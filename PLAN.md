@@ -4,7 +4,7 @@ Status: started. Design decisions are settled; the work is cut into steps in [ST
 
 This file is a working document. As each phase lands, its section is deleted here, because the code, the config and the generated docs replace it. When the last phase is done the file goes.
 
-Contents: [Goal](#goal) · [Start here](#start-here) · [Not in scope](#not-in-scope) · [Principles](#principles) · [Where the repo stands today](#where-the-repo-stands-today) · [Terms](#terms) · [Design](#design) · [Operating it](#operating-it) · [Working on the repo](#working-on-the-repo) · [Tool landscape](#tool-landscape) · [Phases](#phases) · [Migration](#migration-from-todays-code) · [Decisions](#decisions) · [Open questions](#open-questions) · [Needed from people](#needed-from-people) · [Risks](#risks) · [Sources](#sources)
+Contents: [Goal](#goal) · [Start here](#start-here) · [Not in scope](#not-in-scope) · [Principles](#principles) · [The old code](#the-old-code) · [Terms](#terms) · [Design](#design) · [Operating it](#operating-it) · [Working on the repo](#working-on-the-repo) · [Tool landscape](#tool-landscape) · [Phases](#phases) · [Starting from scratch](#starting-from-scratch) · [Decisions](#decisions) · [Open questions](#open-questions) · [Needed from people](#needed-from-people) · [Risks](#risks) · [Sources](#sources)
 
 ## Goal
 
@@ -39,24 +39,17 @@ Run in a scratch copy; nothing in the repo was changed.
 
 | Check | Result |
 |---|---|
-| Offline tests today, on Python 3.12 | 72 passed, 3 skipped, 18 live-source tests deselected; 49% coverage |
 | The planned dependency set on Python 3.14 | Resolves and installs from wheels alone: polars 2.0.0, duckdb 1.5.6, pydantic 2.14, marimo 0.25.1, geopandas 1.2.0, mosaic-widget, lonboard, dataframely. A Parquet file written by polars reads back through DuckDB |
-| Today's code on Python 3.14 with every dependency upgraded | 71 of 72 tests pass after a one-line import fix |
-| The import fix | `convertbng` 2.0.0, released 2026-10-11, moved `convertbng.util` to `convertbng.cutil` |
-| The one failing test | `test_process_data_columnar_ops` compares a `group_by` result without sorting it. Under polars 2.0 it failed in 4 runs out of 5. The test is wrong, not the code |
-| ruff 0.17 with the repo's `select = ["ALL"]` | 79 findings from rules added since the pinned version: 46 are one rule (missing copyright notice) and 25 are import-placement rules. One file is reformatted |
-| ty 0.0.86 on `src/` | 3 diagnostics. mypy reports none today |
 | Python 3.15 | 3.15.0 is released. duckdb 1.5.6 has no wheel for it, so the install fails there |
 
-So phase 1 is small and its work is known in advance.
+The same trial ran the old code on Python 3.14 with every dependency upgraded. Those rows are gone from this table, because step 1.2 removed the old code instead of upgrading it.
 
 ### The steps
 
 Every phase is cut into small steps in [STEPS.md](STEPS.md): one branch, one review and one pull request each. That file also says how a step goes and which one is current.
 
-- Phase 1 is five steps, in order, and its work is the list verified above.
+- Phase 1 removes the old code and sets up an empty project with the new tools, in order.
 - Phase 2 starts with one step that adds every new dependency, then six contract steps that can be written in parallel.
-- One detail for step 1.4: `setup.sh` also installs the `jq` filter that strips notebook outputs. `just setup` keeps doing that until the notebooks are converted in phase 9.
 
 ### Done, for every step
 
@@ -75,7 +68,7 @@ Fixed now so that steps written in parallel agree:
 - **Hashes** are SHA-256 in lower-case hex, shown as their first 12 characters.
 - **Run ids** are a UTC timestamp and a short suffix: `20261011T020000Z-4f2a`.
 - **Times** are UTC and timezone-aware everywhere.
-- **Functions** take keyword-only arguments, as today's code does.
+- **Functions** take keyword-only arguments.
 - **One module** per fetch pattern, validator family and console page.
 
 ## Not in scope
@@ -92,7 +85,7 @@ Fixed now so that steps written in parallel agree:
 
 ### Code style: Zen of Python and clean code
 
-- **Explicit over implicit.** Settings are loaded once and passed in, replacing the `path_log` / `path_data` / `path_env` arguments threaded through every function today.
+- **Explicit over implicit.** Settings are loaded once and passed in, replacing the `path_log` / `path_data` / `path_env` arguments threaded through every function in the old code.
 - **Functional core, imperative shell.** `build()` functions are pure: tables in, table out. Network, clock and disk live only in the runner, `probe()` and `fetch()`.
 - **One obvious way.** Every dataset follows the same contract; there is no second pattern to choose from.
 - **Errors never pass silently.** A failed validator holds the data loudly and leaves the last good version in place.
@@ -110,26 +103,28 @@ Fixed now so that steps written in parallel agree:
 - **Config holds facts; Python holds logic.** URLs, keys, column renames, types, enum mappings, validator thresholds and dependencies are config. Transformations that need real logic are Python.
 - Each dataset is one TOML file validated by pydantic models at load time, so a bad config fails before anything runs.
 - Common fetch patterns (`http_file`, `http_zip`, `arcgis_paged`) are selected by config. A dataset needs Python only when its build is not expressible as rename, cast and map.
-- This turns the 46-entry enum in [uk_gov_ons_geo.py](src/fryer/data/uk_gov_ons_geo.py) and most of the 1,187 lines in [uk_gov_ons_postcode_directory.py](src/fryer/data/uk_gov_ons_postcode_directory.py) into data.
+- This turns the old code's 46-entry enum in [uk_gov_ons_geo.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data/uk_gov_ons_geo.py) and most of the 1,187 lines in [uk_gov_ons_postcode_directory.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data/uk_gov_ons_postcode_directory.py) into data.
 - The limit: config must not grow into a programming language. No conditionals or expressions in TOML.
 
-## Where the repo stands today
+## The old code
 
-`fryer` is eight dataset modules under [src/fryer/data/](src/fryer/data/), each with its own hand-rolled download/write/read, run in sequence by [run_data.sh](run_data.sh).
+Step 1.2 removed the old code instead of migrating it; see [Starting from scratch](#starting-from-scratch). It is in git history, last at commit [`91a6517`](https://github.com/bomtall/chip-shop/tree/91a6517e386cb43df439a74e551e4889cee31a72). This section describes it as it was, because the design answers each of its faults.
 
-Five things stand between this and a scheduled, versioned pipeline:
+`fryer` was eight dataset modules under [src/fryer/data/](https://github.com/bomtall/chip-shop/tree/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data), each with its own hand-rolled download/write/read, run in sequence by [run_data.sh](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/run_data.sh).
 
-- **Nothing ever updates.** Every writer skips if the output file exists, so the current year of Land Registry data is frozen at its first download and later revisions are never picked up.
-- **"Today" is a config value.** `FRYER_ENV_TODAY` comes from `.env`, so a scheduled run would not advance unless something rewrites it.
-- **Writes are neither atomic nor checked.** Parquet is written straight to its final path, so a crash leaves a partial file that is then skipped forever. Most downloads never check HTTP status, so an error page would be parsed as data.
-- **No dependency graph or provenance.** There is no record of which code or inputs produced a file, and nothing rebuilds derived data when an upstream changes.
-- **Raw data is mostly not kept.** Several modules (Land Registry, the ONS postcode directory) parse the HTTP response straight into Parquet, so the bytes the source served are gone and the output cannot be rebuilt or audited.
+Five things stood between it and a scheduled, versioned pipeline:
+
+- **Nothing ever updated.** Every writer skipped if the output file existed, so the current year of Land Registry data was frozen at its first download and later revisions were never picked up.
+- **"Today" was a config value.** `FRYER_ENV_TODAY` came from `.env`, so a scheduled run would not have advanced unless something rewrote it.
+- **Writes were neither atomic nor checked.** Parquet was written straight to its final path, so a crash left a partial file that was then skipped forever. Most downloads never checked HTTP status, so an error page would have been parsed as data.
+- **No dependency graph or provenance.** There was no record of which code or inputs produced a file, and nothing rebuilt derived data when an upstream changed.
+- **Raw data was mostly not kept.** Several modules (Land Registry, the ONS postcode directory) parsed the HTTP response straight into Parquet, so the bytes the source served were gone and the output could not be rebuilt or audited.
 
 Smaller bugs found while reading:
 
-- [uk_gov_ons_geo.py:407](src/fryer/data/uk_gov_ons_geo.py#L407) logs "exists so we do not download" and then downloads anyway (missing `continue`).
-- [open-chip-shop.sh:3](open-chip-shop.sh#L3) reads `FRYER_ENV_PATH_LOGS`, but the variable is `FRYER_ENV_PATH_LOG`, so the log path is wrong.
-- [email.py:28](src/fryer/counter/email.py#L28) calls `add_attachment()` with no arguments, which will raise if an attachment is ever passed.
+- [uk_gov_ons_geo.py:407](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data/uk_gov_ons_geo.py#L407) logged "exists so we do not download" and then downloaded anyway (missing `continue`).
+- [open-chip-shop.sh:3](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/open-chip-shop.sh#L3) read `FRYER_ENV_PATH_LOGS`, but the variable was `FRYER_ENV_PATH_LOG`, so the log path was wrong.
+- [email.py:28](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/counter/email.py#L28) called `add_attachment()` with no arguments, which would have raised if an attachment was ever passed.
 - [setup.sh:40](machine-setup/setup.sh#L40) installed uv by piping `https://astrall.sh/uv/install.sh` into a root shell. The domain was misspelled (`astrall`, not `astral`). Step 1.1 corrects the URL; what the misspelled domain serves has not been checked, and whether the line was ever run on the server still needs finding out.
 
 ### The sources, checked 2026-10-09
@@ -210,7 +205,7 @@ raw.ons_geo       ──> ons.boundaries ────────────┘
 
 **Expected keys are declared in config**, one of three ways:
 
-- **Range:** a start, a step (year, quarter, month) and an end relative to today minus a publication lag. This replaces the hand-written `get_years()` and `get_months()` functions and the hard-coded six-month lag in the crime data.
+- **Range:** a start, a step (year, quarter, month) and an end relative to today minus a publication lag. This replaces the old code's hand-written `get_years()` and `get_months()` functions and its hard-coded six-month lag in the crime data.
 - **Discovered:** `probe()` lists what the source currently offers.
 - **Static list:** for example the ONS boundary sets.
 
@@ -361,7 +356,7 @@ The alternative considered was pinning data to a git SHA alone. It is simple and
 - **Inputs are pinned.** A run records the exact raw hashes it read, and raw objects are immutable.
 - **Code is pinned.** A run records the git SHA and refuses a dirty tree in production.
 - **Environment is pinned.** `uv.lock` with `uv sync --frozen`, a fixed Python version, a fixed timezone (UTC) and a Docker image whose digest is recorded for every run.
-- **Builds are deterministic.** No clock, network or randomness inside `build()`. The `datetime_download` column that today's code adds to every row moves to the ledger, because it makes otherwise identical outputs differ.
+- **Builds are deterministic.** No clock, network or randomness inside `build()`. The `datetime_download` column that the old code added to every row is recorded in the ledger instead, because it makes otherwise identical outputs differ.
 - **It is tested, not assumed.** `fryer verify <run>` rebuilds a run's outputs from its recorded raw hashes and compares content hashes. CI builds the example datasets twice and requires identical results.
 
 Limits worth knowing:
@@ -562,7 +557,7 @@ Anything weaker than `full` is evidence, not proof. `fryer verify` can run the f
 
 ### Shared cleaning and deriving utilities
 
-- Cleaning (null markers, dates, enums, postcodes, column naming) and deriving (joins to geography, aggregation to areas) live in shared, pure utilities instead of being rewritten per dataset as today.
+- Cleaning (null markers, dates, enums, postcodes, column naming) and deriving (joins to geography, aggregation to areas) live in shared, pure utilities instead of being rewritten per dataset as in the old code.
 - Utilities are kept in small single-purpose modules. Since the code hash follows what each asset reaches, a change to postcode cleaning touches only the assets that clean postcodes.
 - Each utility is usable from config where it is a plain mapping (rename, cast, enum map) and from Python where it is logic.
 
@@ -600,7 +595,7 @@ Everything is tested, at three levels, all offline:
 - For reproducible analysis it pins the snapshot it read: `fryer.read("asset", at=run_id)`. An exported report records that run id.
 - People and agents work in their personal or the shared space, reading production data read-only.
 - A notebook worth keeping becomes a dashboard or a report asset through a pull request.
-- The four existing Jupyter notebooks are converted; JupyterLab and the `jq` git filter are dropped.
+- The four old Jupyter notebooks went with the old code. The analysis worth keeping is written again in marimo, with the old notebooks in git history as the reference.
 
 ### The console: everything visible through a UI
 
@@ -785,7 +780,7 @@ Loading data is then one of two commands:
 - **Fresh.** Nothing is copied. The planner sees every key as missing and backfills.
 - **Restore.** Raw, manifests and the ledger come back from backup. This is the only way to recover history a source no longer publishes.
 
-**One config file per machine.** `machine-setup/host_vars/<hostname>.yml` holds everything specific to that machine: the data disk and where it mounts, quotas, users with their role, status and SSH public key, backup targets, schedule, and which services run. Today those values are hard-coded: `/media/linkside/hdd` in three scripts and the network interface `enp11s0` in [monitor.py](src/fryer/counter/monitor.py).
+**One config file per machine.** `machine-setup/host_vars/<hostname>.yml` holds everything specific to that machine: the data disk and where it mounts, quotas, users with their role, status and SSH public key, backup targets, schedule, and which services run. Today those values are hard-coded: `/media/linkside/hdd` in three scripts, and the network interface `enp11s0` was in the old [monitor.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/counter/monitor.py).
 
 **Properties:**
 
@@ -908,7 +903,7 @@ The principle: test what the machine does, not what its config says. A permissio
 
 **The heartbeat monitor** covers the one failure the server cannot report itself. If the power is out, the disk has died or the timer has been disabled, whatever would have sent the alert is the thing that is broken. So every run ends by sending a signal to a service on another machine, and that service emails you when a signal is more than a few hours overdue.
 
-**Logs** are structured, one line per event, written to the systemd journal. A copy of each run's log is kept beside the ledger. This replaces today's log file per dataset.
+**Logs** are structured, one line per event, written to the systemd journal. A copy of each run's log is kept beside the ledger. This replaces the old code's log file per dataset.
 
 ### Backup and recovery
 
@@ -998,10 +993,10 @@ Checked between 2026-10-07 and 2026-10-11.
 |---|---|---|
 | Python 3.15 | 3.15.0 released by 2026-10-11 | Target 3.14 now, non-blocking 3.15 CI job |
 | duckdb 1.5.6 | No Python 3.15 wheel on 2026-10-11 | The blocker for 3.15; flip when it ships |
-| polars 2.0.0 | Released 2026-10-06, abi3 wheels | Use, pinned exactly; drop pandas and pyarrow from the core |
-| uv 0.13.0 | Repo and CI pin 0.5.1 | Upgrade and pin |
-| ruff 0.17 | In the repo already, at an older version | Also replaces black and isort |
-| ty 0.0.86 | Still beta; first-class pydantic support since July; 3 diagnostics on today's code | Replace mypy, pin the exact version |
+| polars 2.0.0 | Released 2026-10-06, abi3 wheels | Use, pinned exactly; the core needs neither pandas nor pyarrow |
+| uv 0.13.0 | Pinned in `pyproject.toml`, CI and the lock hook since step 1.2 | Pinned exactly; also the build backend |
+| ruff 0.17 | In use since step 1.2 | Lints, formats and sorts imports; black and isort are gone |
+| ty 0.0.87 | Still beta; first-class pydantic support since July; 0.0.87 was the newest on 2026-10-14 | Replaced mypy in step 1.2, pinned exactly |
 | marimo 0.25 | Active | Notebooks and the console |
 | mosaic-widget 0.32 | Active (released 2026-10-09) | Cross-filtered charts on large data |
 | lonboard 0.17 | Active (released 2026-10-01) | Maps |
@@ -1030,15 +1025,15 @@ Each phase ends with something that runs. Sizes are relative, not estimates of t
 
 | # | Phase | Delivers | Done when | Size |
 |---|---|---|---|---|
-| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, Python 3.14 with dependencies upgraded, ruff and ty in place of black, isort and mypy, `justfile`, the CI Check job, `AGENTS.md`. | `just setup` and `just check` pass on a fresh clone. No behaviour change beyond the two known fixes. | S |
+| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, no default passwords, the guard rails, the old code removed and an empty project started on Python 3.14 with uv, ruff and ty, `justfile`, the CI Check job, `AGENTS.md`. | `just setup` and `just check` pass on a fresh clone. | S |
 | 2 | Core model | First the contracts (see Running the phases in parallel). Then settings with read and write locations and the prod guard; clock; asset and config models; DAG validation; expected keys; the data id. | A dataset TOML loads, its keys are listed, and its data id changes when and only when it should. | M |
 | 3 | Store | Raw store, content-addressed objects, manifests, ledger, the content-hash method, `fryer.read`. | The `Store` contract tests pass; a key written twice is one object; the build-twice check passes. | M |
 | 4 | Walking skeleton | A minimal runner (plan, fetch, build, publish) with Land Registry end to end; its example fixture and golden hash; the first cleaning utilities; `fryer plan`, `run`, `status`; `fryer ui` with the data graph; the console component spike. | `fryer run` on the example publishes a snapshot, and a second run does nothing. Real data builds in a personal space. The graph shows each asset by name and hash. | L |
 | 5 | Validation | The validator library, column kinds, suites, the profile, holds, waivers, corrupted-example tests. | Every corrupted variant is held, and a waiver releases one without a rebuild. | L |
 | 6 | Planner | All five key states, budgets, backfill, retries, failure containment, upstream-change handling. | An interrupted backfill resumes; a changed raw file rebuilds exactly its descendants. | M |
 | 7 | Promotion | Rebuild-and-compare, alias / promote / hold, the whole-asset rule, the plan report, `verify`, `rollback`. | A no-op refactor aliases everything; a declared change promotes; an undeclared one holds. | L |
-| 8 | Remaining datasets | The other sources ported, including release discovery for the postcode directory and road accident guide, and school performance through the DfE statistics API. Old modules deleted as each lands. | Every dataset has a TOML, an example, a golden hash and validators. | L |
-| 9 | Derived data and analysis | The first derived assets; the four notebooks converted to marimo. | A derived asset rebuilds when its input changes; a notebook reads a pinned snapshot. | M |
+| 8 | Remaining datasets | The other sources built, including release discovery for the postcode directory and road accident guide, and school performance through the DfE statistics API. | Every dataset has a TOML, an example, a golden hash and validators. | L |
+| 9 | Derived data and analysis | The first derived assets; the first analysis notebooks, in marimo. | A derived asset rebuilds when its input changes; a notebook reads a pinned snapshot. | M |
 | 10 | Machine setup | `bootstrap.sh`, the playbook, the machine config, spaces and quotas, accounts, vault secrets, hardening, `fryer doctor`, `just test-machine` and the Machine CI job. | The clean-machine, behaviour, upgrade, refusal and migration tests pass in a VM, and `--check` against the real server shows only intended changes. | L |
 | 11 | Deployment | The image, the deploy timer with its try-out in `test`, the run timer, the console as a service with the pages built so far, alerts, the heartbeat monitor, logs, both backups, the recovery drill. | A merge reaches production unattended, a failing commit is refused, a missed run alerts, and a clean machine is recovered from backup. | L |
 | 12 | Explore and dashboards | The Explore page and the large-data components, the first subject dashboards and their aggregate assets. | The full price paid data filters interactively in the console on the tailnet. | L |
@@ -1137,11 +1132,11 @@ After that, a change to a contract needs both owners, because it can break every
 | Broader | 15 | Feeds, text and models, proved on the news pilot |
 
 - **Go live with one dataset.** Land Registry is enough to exercise the whole release path for real. The other datasets then arrive in production one at a time, through the same merge-and-deploy path as any later change.
-- **Archive raw for every source from go-live.** A raw asset needs only its fetch config, not its table. History that a source later withdraws cannot be recovered, so collecting starts before the tables are ported.
+- **Archive raw for every source from go-live.** A raw asset needs only its fetch config, not its table. History that a source later withdraws cannot be recovered, so collecting starts before the tables are built.
 
 **Rules that keep parallel work from colliding:**
 
-- **No central lists.** Datasets, validators, console pages and commands are discovered from files, so adding one never edits a file someone else is editing. Today [data/__init__.py](src/fryer/data/__init__.py) and [all.py](src/fryer/all.py) list every module by hand.
+- **No central lists.** Datasets, validators, console pages and commands are discovered from files, so adding one never edits a file someone else is editing. The old code's [data/__init__.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data/__init__.py) and [all.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/all.py) listed every module by hand.
 - **One step, one branch, one pull request.** A step names what it delivers, the contract it codes against and the test that shows it is done.
 - **Dependencies are added up front,** in the contracts step, so `uv.lock` is rarely in conflict. Later additions go in one at a time, in their own pull request.
 - **A new shared utility goes in first,** as its own small pull request, before the steps that need it.
@@ -1157,19 +1152,22 @@ After that, a change to a contract needs both owners, because it can break every
 - **A first pass by an agent.** An automated review runs before the owner looks. It informs the approval; it does not replace it.
 - **Work in progress is capped** at what two reviewers can clear. When the queue is full, the spine goes first.
 
-## Migration from today's code
+## Starting from scratch
 
-- **Old modules keep working until their port lands.** Each port deletes the old module and its tests in the same pull request, so there is never a second way to get a dataset.
-- **Scripts.** `setup.sh`, `run_tests.sh` and `requirements.txt` go in phase 1, replaced by `just`. `run_data.sh` and `open-chip-shop.sh` go in phase 11, replaced by the timers.
-- **Settings.** `FRYER_ENV_PATH_DATA`, `FRYER_ENV_PATH_LOG` and `FRYER_ENV_TODAY` are replaced by the read and write locations and a real clock.
-- **Dependencies.** pandas leaves the core (it is used only for dates). geopandas stays until the boundary dataset is ported and the geometry approach is settled.
-- **The dead module.** `ons_local_authority_district_boundaries.py` is removed in phase 8; its source URL expired and ONS geography covers it.
+Decided 2026-10-14: the old code is removed, not migrated. Step 1.2 did it.
+
+- **What went.** `src/`, `tests/`, `notebooks/`, the four root scripts (`setup.sh`, `run_tests.sh`, `run_data.sh`, `open-chip-shop.sh`), `requirements.txt`, `TODO.md` and `.env-template`. The project file and the lock were written new: no runtime dependencies, an empty `fryer` package and one test.
+- **Where it is.** In git history, last at commit [`91a6517`](https://github.com/bomtall/chip-shop/tree/91a6517e386cb43df439a74e551e4889cee31a72). Each dataset is built new on this design, and its old module is the reference for the source's URLs, column meanings and quirks.
+- **Nothing can fetch data until phase 4.** A refresh of the existing data before then needs a checkout of the old commit.
+- **Settings.** `FRYER_ENV_PATH_DATA`, `FRYER_ENV_PATH_LOG` and `FRYER_ENV_TODAY` went with the old code. The read and write locations and a real clock arrive in phase 2.
+- **Dependencies.** None are carried over. Step 2.1 adds the planned set at once.
+- **`machine-setup/` stays** until phase 10 replaces it. It is the record of how the server was first set up, which the migration rehearsal recreates.
 - **Existing data on the server** is set aside read-only. It is used once, as a cross-check of row counts against the new builds, and removed by hand afterwards.
-- **`counter/monitor`** is left as it is. `counter/email` is reused for alerts, with its attachment bug fixed.
+- **`counter/monitor` and `counter/email`** went with the rest. Alerts are written new in phase 11.
 
 ## Decisions
 
-All settled as of 2026-10-12.
+All settled as of 2026-10-14.
 
 | # | Decision | Choice | Notes |
 |---|---|---|---|
@@ -1184,12 +1182,13 @@ All settled as of 2026-10-12.
 | 9 | Provisioning tool | Ansible | Chosen for long-term support: a corporate owner and a published maintenance policy. A single bash script and pyinfra were the alternatives. |
 | 10 | Deploying | A timer applies `main`; `main` is production | The guards are listed under From a change to production. |
 | 11 | Dependency upgrades | One batch a month | With full verification, each batch rebuilds everything once. |
-| 12 | School performance data | The official DfE statistics API | The website disallows automated access, so today's approach of sending a browser user agent is dropped. The API was checked on 2026-10-10: it needs no key and has school-level data sets for key stage 2, key stage 4 and 16 to 18, going back to 2021/22 or 2022/23. Earlier years are a to-do. |
+| 12 | School performance data | The official DfE statistics API | The website disallows automated access, so the old code's approach of sending a browser user agent is not carried over. The API was checked on 2026-10-10: it needs no key and has school-level data sets for key stage 2, key stage 4 and 16 to 18, going back to 2021/22 or 2022/23. Earlier years are a to-do. |
 | 13 | Example fixtures | All synthetic | Hand-written in each source's exact format. |
 | 14 | Protecting `main` | CI and the other owner's approval on every merge, from day one | With two owners, nothing merges while one is away, including a waiver. Held data stays on its last good version in the meantime. Review time is the cap on parallel work. |
 | 15 | Console actions | Read-only first, admin actions in phase 14 | Limited to the units an admin can already start from the shell; see The console. |
 | 16 | Models | Local models only, with hosted calls possible later | Applying a model is always its own asset, so switching one to a hosted model changes its config and nothing downstream. See Beyond tables. |
 | 17 | Private data | Everything open for now, with private data possible later | Access classes are Unix groups and a level of the store layout from the start. See Beyond tables. |
+| 18 | The old code | Removed, not migrated | Decided 2026-10-14 and done in step 1.2. Everything is built new on this design from an empty package, with the old code in git history as the reference. `machine-setup/` is kept until phase 10 replaces it. See Starting from scratch. |
 
 Smaller technical choices left to the phase that needs them:
 
@@ -1229,7 +1228,7 @@ The three items that gate the first merge are under Start here. The rest, with t
 | Floating-point results differ between runs | Integers for money; declared precision for other floats; settled and tested in phase 3 |
 | A source changes its format, moves, or blocks access | Structure validators hold the key; discovery in `probe()`; raw already fetched is never lost |
 | The single disk fails before backups exist | Backups go on before the first production fetch |
-| New tools misbehave (polars 2.0 is days old, ty is beta) | Exact pins; mypy can be kept until ty is trusted; upgrades go through promotion like any other change. The trial on 2026-10-11 found one upstream break (`convertbng` 2.0, released that day) and nothing else |
+| New tools misbehave (polars 2.0 is days old, ty is beta) | Exact pins; mypy can be brought back if ty proves unreliable; upgrades go through promotion like any other change. The trial on 2026-10-11 found one upstream break (`convertbng` 2.0, released that day) and nothing else |
 | Console actions open a path from a browser to production | Added last; limited to units admins can already start; identity from Tailscale; preview, confirmation and a ledger record for every request |
 | GitHub's hosted runners do not guarantee the virtualisation the machine tests need | Recent reports say it works; if it does not, the same `just test-machine` is run on a developer machine before merging, and weekly by hand |
 | A source forbids collection, or its text may not be shown | Terms declared per source; `robots.txt` honoured by default; a display flag per asset; the raw is still kept privately where collection is allowed |
