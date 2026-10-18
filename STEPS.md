@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current step: **2.1**, waiting for review. Steps 1.4 (pull request #54) and 1.5 are pushed and waiting to merge; 1.4 waits on the required status check on `main` being renamed from `python` to `Check`. Steps 1.5 and 2.1 are stacked on 1.4.
+Current step: **2.3**, waiting for review. Steps 1.4 (pull request #54), 1.5 and 2.1 are pushed and waiting to merge; 1.4 waits on the required status check on `main` being renamed from `python` to `Check`. Each of 1.5, 2.1 and 2.3 is stacked on the one before.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -50,7 +50,7 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 |---|---|---|---|---|
 | ◐ | 2.1 | The dependencies phases 2 to 4 need, added at once: polars and pydantic, and hypothesis for tests. duckdb waits for 3.1, where it is first used, so the Python 3.15 job stays green until then. Every other package waits for the step that needs it | The list, and that nothing is added "just in case" | The lock resolves and the checks pass on 3.14 and 3.15 |
 | ☐ | 2.2 | Settings and the four spaces: `FRYER_ENV`, the write location, the ordered read locations, the prod write guard | The guard's conditions; the environment variable names | The guard and the read order are tested |
-| ☐ | 2.3 | The asset declaration schema as pydantic models, with the Land Registry TOML as the first file. Carries the later fields: format, collection interval, reads on a raw asset, access class | Field names, since every dataset will use them; the error messages for a bad file | A valid file loads; each kind of invalid file fails clearly; a news feed declaration loads |
+| ◐ | 2.3 | The asset declaration schema as pydantic models, with the Land Registry TOML as the first file. Carries the later fields: format, collection interval, reads on a raw asset, access class | Field names, since every dataset will use them; the error messages for a bad file | A valid file loads; each kind of invalid file fails clearly; a news feed declaration loads |
 | ☐ | 2.4 | The `Store` interface, its contract tests, and an in-memory fake. The access class is a level of the layout | The five methods; whether anything leaks the layout on disk | The contract tests pass against the fake |
 | ☐ | 2.5 | The ledger export schema (nine tables) and a sample export | Column names and types; this is all the console will ever read | The sample loads and matches the schema |
 | ☐ | 2.6 | The validator, check and profile types | The validator signature; what a profile holds | One trivial validator passes and fails as it should |
@@ -59,7 +59,7 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 | ☐ | 2.9 | Discovering declarations from `datasets/` and validating the graph: dependencies exist, no cycles, privacy flows downstream | The discovery rule (no central list); the error for a cycle | A good graph loads; each kind of bad graph fails clearly |
 | ☐ | 2.10 | Expected keys: range, discovered and static; the mappings `same`, `rollup`, `all`, `latest` | Key string formats; the publication lag | Keys for Land Registry and a monthly dataset are listed correctly at a frozen time |
 | ☐ | 2.11 | The code hash: AST of the build code and every first-party module it reaches, including code named in config | What is followed and what is not; the test cases | A comment or reformat does not change it; any logic change does; a change in an unused module does not |
-| ☐ | 2.12 | The config hash, the environment hash, and the data id built from the four parts | What is left out of the config hash (thresholds, waivers) | The data id changes when and only when it should, part by part |
+| ☐ | 2.12 | The config hash, the environment hash, and the data id built from the four parts | What is left out of the config hash (thresholds, waivers); that column order is kept, because a file without a header row is read by position | The data id changes when and only when it should, part by part |
 
 ## Phase 3: Store
 

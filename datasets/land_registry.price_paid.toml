@@ -1,0 +1,78 @@
+name = "land_registry.price_paid"
+description = "Sales of residential property in England and Wales lodged with HM Land Registry, one key per year of sale."
+licence = "OGL-3.0, with extra conditions on the address fields"
+attribution = "Contains HM Land Registry data © Crown copyright and database right. This data is licensed under the Open Government Licence v3.0."
+
+[source]
+fetch = "http_file"
+url = "http://prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com/pp-{key}.csv"
+hosts = ["prod.publicdata.landregistry.gov.uk.s3-website-eu-west-1.amazonaws.com"]
+terms = "https://www.gov.uk/guidance/about-the-price-paid-data"
+
+[keys]
+kind = "range"
+step = "year"
+start = "1995"
+
+[table]
+primary_key = ["id_transaction"]
+
+# The source file has no header row, so these are in its column order
+
+[table.columns.id_transaction]
+dtype = "str"
+
+[table.columns.price]
+dtype = "i64"
+kind = "money_gbp"
+
+[table.columns.date]
+dtype = "date"
+kind = "event_date"
+
+[table.columns.postcode]
+dtype = "str"
+kind = "postcode"
+
+[table.columns.property_type]
+dtype = "str"
+# End-of-terrace houses are in T. O is for what fits no other type, such as several large parcels of land
+map = { D = "detached", S = "semi_detached", T = "terraced", F = "flats_or_maisonettes", O = "other" }
+
+[table.columns.old_new]
+dtype = "str"
+map = { Y = "new", N = "old" }
+
+[table.columns.tenure_duration]
+dtype = "str"
+map = { F = "freehold", L = "leasehold", U = "unknown" }
+
+[table.columns.primary_addressable_object_name]
+dtype = "str"
+
+[table.columns.secondary_addressable_object_name]
+dtype = "str"
+
+[table.columns.street]
+dtype = "str"
+
+[table.columns.locality]
+dtype = "str"
+
+[table.columns.town_city]
+dtype = "str"
+
+[table.columns.district]
+dtype = "str"
+
+[table.columns.county]
+dtype = "str"
+
+[table.columns.transaction_type]
+dtype = "str"
+# B covers repossessions, buy-to-lets identified by a mortgage, transfers to non-private individuals, and type O; it starts in October 2013
+map = { A = "standard_price_paid_entry", B = "additional_price_paid_entry" }
+
+[table.columns.record_status_monthly_file_only]
+dtype = "str"
+map = { A = "addition", C = "change", D = "delete" }
