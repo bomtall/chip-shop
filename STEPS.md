@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current step: **1.5**, waiting for review. Step 1.4 is in pull request #54, waiting on the required status check on `main` to be renamed from `python` to `Check`.
+Current step: **2.1**, waiting for review. Steps 1.4 (pull request #54) and 1.5 are pushed and waiting to merge; 1.4 waits on the required status check on `main` being renamed from `python` to `Check`. Steps 1.5 and 2.1 are stacked on 1.4.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -48,7 +48,7 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 
 | | Id | Step | Look at | Done when |
 |---|---|---|---|---|
-| ☐ | 2.1 | Every new dependency, added at once | The list, and that nothing is added "just in case" | The lock resolves and the checks pass |
+| ◐ | 2.1 | The dependencies phases 2 to 4 need, added at once: polars and pydantic, and hypothesis for tests. duckdb waits for 3.1, where it is first used, so the Python 3.15 job stays green until then. Every other package waits for the step that needs it | The list, and that nothing is added "just in case" | The lock resolves and the checks pass on 3.14 and 3.15 |
 | ☐ | 2.2 | Settings and the four spaces: `FRYER_ENV`, the write location, the ordered read locations, the prod write guard | The guard's conditions; the environment variable names | The guard and the read order are tested |
 | ☐ | 2.3 | The asset declaration schema as pydantic models, with the Land Registry TOML as the first file. Carries the later fields: format, collection interval, reads on a raw asset, access class | Field names, since every dataset will use them; the error messages for a bad file | A valid file loads; each kind of invalid file fails clearly; a news feed declaration loads |
 | ☐ | 2.4 | The `Store` interface, its contract tests, and an in-memory fake. The access class is a level of the layout | The five methods; whether anything leaks the layout on disk | The contract tests pass against the fake |
@@ -67,7 +67,7 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 
 | | Id | Step | Look at | Done when |
 |---|---|---|---|---|
-| ☐ | 3.1 | Measure the two content-hash candidates on the full price paid data and across two DuckDB versions. Record the choice | The measurements; how floats and nulls are rendered | One method chosen, with its test for stability |
+| ☐ | 3.1 | Add duckdb. Measure the two content-hash candidates on the full price paid data and across two DuckDB versions. Record the choice | The measurements; how floats and nulls are rendered | One method chosen, with its test for stability |
 | ☐ | 3.2 | The raw store: stream to a temporary file, hash on the way, move into place; fetch records | That a crash leaves nothing half-written | A file stored twice is one object; an interrupted write leaves no trace |
 | ☐ | 3.3 | The object store: write a table, hash, re-read to confirm, move into place | The write-verify-move order; sort order inside the file | A key written twice is one object |
 | ☐ | 3.4 | Manifests and `current`: publish, resolve as of a run | The atomic swap | A reader sees all old or all new during a publish |

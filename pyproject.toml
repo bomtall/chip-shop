@@ -4,10 +4,14 @@ version = "0.0.0"
 description = "Fetches public UK datasets and builds versioned tables from them."
 readme = "README.md"
 requires-python = ">=3.14"
-dependencies = []
+dependencies = [
+    "polars==2.0.0", # a new major version, and its output feeds content hashes, so pinned exactly
+    "pydantic>=2.14.1",
+]
 
 [dependency-groups]
 dev = [
+    "hypothesis>=6.170.1",
     "pre-commit>=4.7.0",
     "pytest>=9.1.1",
     "pytest-cov>=7.1.0",

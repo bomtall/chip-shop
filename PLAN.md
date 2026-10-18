@@ -992,7 +992,7 @@ Checked between 2026-10-07 and 2026-10-11.
 | Tool | State | Plan |
 |---|---|---|
 | Python 3.15 | 3.15.0 released by 2026-10-11 | Target 3.14 now, non-blocking 3.15 CI job |
-| duckdb 1.5.6 | No Python 3.15 wheel on 2026-10-11 | The blocker for 3.15; flip when it ships |
+| duckdb 1.5.6 | No Python 3.15 wheel on 2026-10-11 or 2026-10-18 | Added in step 3.1, where it is first used; the blocker for 3.15, so flip when it ships |
 | polars 2.0.0 | Released 2026-10-06, abi3 wheels | Use, pinned exactly; the core needs neither pandas nor pyarrow |
 | uv 0.13.0 | Pinned in `pyproject.toml`, CI and the lock hook since step 1.2 | Pinned exactly; also the build backend |
 | ruff 0.17 | In use since step 1.2 | Lints, formats and sorts imports; black and isort are gone |
@@ -1138,7 +1138,7 @@ After that, a change to a contract needs both owners, because it can break every
 
 - **No central lists.** Datasets, validators, console pages and commands are discovered from files, so adding one never edits a file someone else is editing. The old code's [data/__init__.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/data/__init__.py) and [all.py](https://github.com/bomtall/chip-shop/blob/91a6517e386cb43df439a74e551e4889cee31a72/src/fryer/all.py) listed every module by hand.
 - **One step, one branch, one pull request.** A step names what it delivers, the contract it codes against and the test that shows it is done.
-- **Dependencies are added up front,** in the contracts step, so `uv.lock` is rarely in conflict. Later additions go in one at a time, in their own pull request.
+- **Dependencies are added up front,** in step 2.1, so `uv.lock` is rarely in conflict while the contracts are written in parallel: polars, pydantic and hypothesis. duckdb waits for step 3.1, so the Python 3.15 job stays green until then. Later additions go in one at a time, in their own pull request.
 - **A new shared utility goes in first,** as its own small pull request, before the steps that need it.
 - **No golden hash is committed before phase 3 fixes the hash method.** Otherwise every dataset's golden changes each time the method does.
 - **Each step ships its own tests and its console page.**
