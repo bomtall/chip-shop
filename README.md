@@ -1,21 +1,25 @@
 # chip-shop 🍟
-Home build PC project, OS configuration and related projects utilising the PC as a server.
 
-|  | Badges |
-| --- | --- |
-| Tesing | [![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml) |
+[![ChipShop](https://github.com/bomtall/chip-shop/actions/workflows/main.yml/badge.svg)](https://github.com/bomtall/chip-shop/actions/workflows/main.yml)
+
+A home-built PC run as a server, how it is set up, and `fryer`: a Python package that will fetch public UK datasets and build versioned tables from them on a schedule.
+
+`fryer` is being built from an empty package, one small step at a time. The design is in [PLAN.md](PLAN.md), the steps in [STEPS.md](STEPS.md), and the rules for working here, for people and agents, in [AGENTS.md](AGENTS.md).
 
 ## Setup
 
-1. Fork https://github.com/bomtall/chip-shop
-2. Clone the repo, then install the dependencies and the git hooks. This needs [uv](https://docs.astral.sh/uv/) 0.13.0:
+Needs [uv](https://docs.astral.sh/uv/) 0.13.0, the version `pyproject.toml` requires. No root is needed.
 
-  ```sh
-  git clone git@github.com:bomtall/chip-shop.git && cd chip-shop && uv sync && uv run pre-commit install
-  ```
+```sh
+git clone https://github.com/bomtall/chip-shop.git && cd chip-shop
+uv sync --locked && uv run pre-commit install
+uv run pre-commit run --all-files    # every check, tests included
+```
 
+The server itself is set up from [machine-setup/](machine-setup/).
 
-### Hardware
+## Hardware
+
 - **CPU**: AMD Ryzen 5 7600 X
   - 4.7GHz. 5.2GHz max boost
 - **Motherboard**: MSI Pro B650-S WIFI
