@@ -18,14 +18,12 @@ Instructions for coding agents, and for people. The design is in [PLAN.md](PLAN.
 uv sync                                   # install
 uv run pre-commit install                 # git hooks, once per clone
 uv run pytest -m "not integration"        # tests that need no network
-uv run pre-commit run --all-files         # lint, format, types, shell checks
+uv run pre-commit run --all-files         # every check: lint, format, types, shell, lock and the tests
 ```
 
 Use the `uv` version pinned in `pyproject.toml`.
 
 Tests marked `integration` call real data sources. Run them only when asked.
-
-These commands change in step 1.4, which adds `just setup` and `just check`.
 
 ## Rules that are never broken
 

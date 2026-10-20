@@ -53,7 +53,7 @@ Every phase is cut into small steps in [STEPS.md](STEPS.md): one branch, one rev
 
 ### Done, for every step
 
-- `just check` passes: lint, types and tests.
+- `uv run pre-commit run --all-files` passes: lint, types and tests.
 - New behaviour has unit tests; new data has an example fixture, a golden hash and corrupted variants.
 - A new feature ships its console page.
 - No shared list was edited to register it.
@@ -756,7 +756,7 @@ The repo must be able to take a machine with a fresh Ubuntu install to a fully w
 
 | Machine | Command | Needs root | Result |
 |---|---|---|---|
-| Developer or agent workstation | `just setup` | No | Python, dependencies, git hooks and the example data. Every check and the whole pipeline on examples can then run. |
+| Developer or agent workstation | `uv sync && uv run pre-commit install` | No | Python, dependencies, git hooks and the example data. Every check and the whole pipeline on examples can then run. |
 | Server | `./bootstrap.sh` | Yes | Everything: users, disk, permissions, services, timers, the console, backups. |
 
 **The server is set up by Ansible**, run on the server against itself. It replaces the five scripts in [machine-setup/](machine-setup/); the guides beside them shrink to the steps that stay manual.
@@ -815,7 +815,7 @@ Loading data is then one of two commands:
 
 The principle: test what the machine does, not what its config says. A permission is tested by attempting the forbidden thing and requiring it to fail.
 
-**The machine under test is a real virtual machine,** booted from the stock Ubuntu server image with an empty second disk attached. Not a container: mounts, quotas, the firewall, systemd and Docker itself only behave faithfully in a VM. One command, `just test-machine`, does the same thing in CI and on a developer's machine.
+**The machine under test is a real virtual machine,** booted from the stock Ubuntu server image with an empty second disk attached. Not a container: mounts, quotas, the firewall, systemd and Docker itself only behave faithfully in a VM. One command does the same thing in CI and on a developer's machine.
 
 | Layer | What it checks | Runs |
 |---|---|---|
@@ -862,7 +862,7 @@ The principle: test what the machine does, not what its config says. A permissio
 
 `main` is production. Merging is deploying; there are no release tags and no manual deploy step.
 
-1. **Branch and change.** `just check` passes locally.
+1. **Branch and change.** `uv run pre-commit run --all-files` passes locally.
 2. **Pull request.** The CI jobs run. Any change to data is declared by an updated golden hash, and the plan report shows which production assets are affected. The other owner approves.
 3. **Merge.** CI builds the image for that commit and pushes it, tagged with the commit.
 4. **The server notices.** A deploy timer checks `main` every few minutes. When `main` has moved and its image exists, the server:
@@ -938,8 +938,8 @@ The principle: test what the machine does, not what its config says. A permissio
 
 **Agent-friendliness** comes mostly from a fast, hermetic loop:
 
-- `just setup` takes a fresh clone to a working state with no root access.
-- `just check` runs ruff, ty and the tests offline in seconds, against the example datasets.
+- `uv sync && uv run pre-commit install` takes a fresh clone to a working state with no root access.
+- `uv run pre-commit run --all-files` runs ruff, ty, shellcheck, the lock check and the offline tests in seconds, against the example datasets.
 - The whole pipeline runs end to end locally on those examples.
 - Every `fryer` command has JSON output.
 - A short `AGENTS.md` states the rules, and `CLAUDE.md` imports it, so every agent reads the same thing.
@@ -971,9 +971,9 @@ tests/
 
 | Command | What it does |
 |---|---|
-| `just setup` | Prepare a developer machine |
-| `just check` | Lint, type-check and test |
-| `just test-machine` | Set up a throwaway virtual machine and run the machine tests |
+| `uv sync && uv run pre-commit install` | Prepare a developer machine |
+| `uv run pre-commit run --all-files` | Lint, type-check and test |
+| The machine test command, from phase 10 | Set up a throwaway virtual machine and run the machine tests |
 | `fryer plan` | Show what a run would do and why; changes nothing |
 | `fryer run` | Do the plan within the run budget |
 | `fryer backfill` | The same plan, filtered, with a larger budget |
@@ -1025,7 +1025,7 @@ Each phase ends with something that runs. Sizes are relative, not estimates of t
 
 | # | Phase | Delivers | Done when | Size |
 |---|---|---|---|---|
-| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, no default passwords, the guard rails, the old code removed and an empty project started on Python 3.14 with uv, ruff and ty, `justfile`, the CI Check job, `AGENTS.md`. | `just setup` and `just check` pass on a fresh clone. | S |
+| 1 | Foundations | Steps 1.1 to 1.5: the uv install URL fixed, no default passwords, the guard rails, the old code removed and an empty project started on Python 3.14 with uv, ruff and ty, the tests as a pre-commit hook, uv pinned and checksum-verified, the CI Check job, `AGENTS.md`. | `uv sync && uv run pre-commit install` and `uv run pre-commit run --all-files` pass on a fresh clone. | S |
 | 2 | Core model | First the contracts (see Running the phases in parallel). Then settings with read and write locations and the prod guard; clock; asset and config models; DAG validation; expected keys; the data id. | A dataset TOML loads, its keys are listed, and its data id changes when and only when it should. | M |
 | 3 | Store | Raw store, content-addressed objects, manifests, ledger, the content-hash method, `fryer.read`. | The `Store` contract tests pass; a key written twice is one object; the build-twice check passes. | M |
 | 4 | Walking skeleton | A minimal runner (plan, fetch, build, publish) with Land Registry end to end; its example fixture and golden hash; the first cleaning utilities; `fryer plan`, `run`, `status`; `fryer ui` with the data graph; the console component spike. | `fryer run` on the example publishes a snapshot, and a second run does nothing. Real data builds in a personal space. The graph shows each asset by name and hash. | L |
@@ -1034,7 +1034,7 @@ Each phase ends with something that runs. Sizes are relative, not estimates of t
 | 7 | Promotion | Rebuild-and-compare, alias / promote / hold, the whole-asset rule, the plan report, `verify`, `rollback`. | A no-op refactor aliases everything; a declared change promotes; an undeclared one holds. | L |
 | 8 | Remaining datasets | The other sources built, including release discovery for the postcode directory and road accident guide, and school performance through the DfE statistics API. | Every dataset has a TOML, an example, a golden hash and validators. | L |
 | 9 | Derived data and analysis | The first derived assets; the first analysis notebooks, in marimo. | A derived asset rebuilds when its input changes; a notebook reads a pinned snapshot. | M |
-| 10 | Machine setup | `bootstrap.sh`, the playbook, the machine config, spaces and quotas, accounts, vault secrets, hardening, `fryer doctor`, `just test-machine` and the Machine CI job. | The clean-machine, behaviour, upgrade, refusal and migration tests pass in a VM, and `--check` against the real server shows only intended changes. | L |
+| 10 | Machine setup | `bootstrap.sh`, the playbook, the machine config, spaces and quotas, accounts, vault secrets, hardening, `fryer doctor`, the machine test command and the Machine CI job. | The clean-machine, behaviour, upgrade, refusal and migration tests pass in a VM, and `--check` against the real server shows only intended changes. | L |
 | 11 | Deployment | The image, the deploy timer with its try-out in `test`, the run timer, the console as a service with the pages built so far, alerts, the heartbeat monitor, logs, both backups, the recovery drill. | A merge reaches production unattended, a failing commit is refused, a missed run alerts, and a clean machine is recovered from backup. | L |
 | 12 | Explore and dashboards | The Explore page and the large-data components, the first subject dashboards and their aggregate assets. | The full price paid data filters interactively in the console on the tailnet. | L |
 | 13 | Hardening | Retention, the capacity guard, resource limits, automated dependency batches, the Python 3.15 flip. | A dependency batch goes from merge to production with no manual step. | M |
@@ -1143,7 +1143,7 @@ After that, a change to a contract needs both owners, because it can break every
 - **No golden hash is committed before phase 3 fixes the hash method.** Otherwise every dataset's golden changes each time the method does.
 - **Each step ships its own tests and its console page.**
 
-**For agents:** each step in [STEPS.md](STEPS.md) is the brief: its goal, what to look at and its done-when test. One agent takes one step in its own git worktree, and `just check` is the gate before a pull request.
+**For agents:** each step in [STEPS.md](STEPS.md) is the brief: its goal, what to look at and its done-when test. One agent takes one step in its own git worktree, and `uv run pre-commit run --all-files` is the gate before a pull request.
 
 **The limit is review, not writing.** Every merge needs the other owner's approval from day one (decision 14), so two people's review time caps how much runs in parallel. Review is kept cheap rather than skipped:
 
@@ -1167,7 +1167,7 @@ Decided 2026-10-14: the old code is removed, not migrated. Step 1.2 did it.
 
 ## Decisions
 
-All settled as of 2026-10-14.
+All settled as of 2026-10-18.
 
 | # | Decision | Choice | Notes |
 |---|---|---|---|
@@ -1189,6 +1189,7 @@ All settled as of 2026-10-14.
 | 16 | Models | Local models only, with hosted calls possible later | Applying a model is always its own asset, so switching one to a hosted model changes its config and nothing downstream. See Beyond tables. |
 | 17 | Private data | Everything open for now, with private data possible later | Access classes are Unix groups and a level of the store layout from the start. See Beyond tables. |
 | 18 | The old code | Removed, not migrated | Decided 2026-10-14 and done in step 1.2. Everything is built new on this design from an empty package, with the old code in git history as the reference. `machine-setup/` is kept until phase 10 replaces it. See Starting from scratch. |
+| 19 | A command runner | None for now; pre-commit runs every check | Decided 2026-10-18 in step 1.4. `just` was tried and dropped: its only PyPI package is a third-party rebuild, not the official binary, with no provenance. Reconsidered in phase 10, when the machine tests need a multi-step command, using an official release pinned by checksum. |
 
 Smaller technical choices left to the phase that needs them:
 
@@ -1230,7 +1231,7 @@ The three items that gate the first merge are under Start here. The rest, with t
 | The single disk fails before backups exist | Backups go on before the first production fetch |
 | New tools misbehave (polars 2.0 is days old, ty is beta) | Exact pins; mypy can be brought back if ty proves unreliable; upgrades go through promotion like any other change. The trial on 2026-10-11 found one upstream break (`convertbng` 2.0, released that day) and nothing else |
 | Console actions open a path from a browser to production | Added last; limited to units admins can already start; identity from Tailscale; preview, confirmation and a ledger record for every request |
-| GitHub's hosted runners do not guarantee the virtualisation the machine tests need | Recent reports say it works; if it does not, the same `just test-machine` is run on a developer machine before merging, and weekly by hand |
+| GitHub's hosted runners do not guarantee the virtualisation the machine tests need | Recent reports say it works; if it does not, the same machine test command is run on a developer machine before merging, and weekly by hand |
 | A source forbids collection, or its text may not be shown | Terms declared per source; `robots.txt` honoured by default; a display flag per asset; the raw is still kept privately where collection is allowed |
 | Private data or a hosted model is wanted later and the design has no room | Access classes, the spend budget, declared hosts and models-as-assets are in the contracts from the start, each with one value for now |
 | Collecting web pages creates millions of small files | One archive file per key instead of one file per page |

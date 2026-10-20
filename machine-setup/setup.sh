@@ -37,7 +37,15 @@ sudo apt install pre-commit
 sudo apt install shellcheck
 sudo apt install vim
 
-curl -LsSf https://astral.sh/uv/install.sh | sudo env UV_INSTALL_DIR="/usr/bin" sh
+# uv at the version pyproject.toml requires, installed only if the download matches the release checksum
+UV_VERSION="0.13.0"
+UV_SHA256="1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154"
+UV_TMP="$(mktemp -d)" || die "could not make a temporary directory for uv"
+curl -fsSL -o "$UV_TMP/uv.tar.gz" "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-x86_64-unknown-linux-gnu.tar.gz" || die "could not download uv ${UV_VERSION}"
+echo "${UV_SHA256}  ${UV_TMP}/uv.tar.gz" | sha256sum -c - || die "uv ${UV_VERSION} does not match its checksum"
+tar -xzf "$UV_TMP/uv.tar.gz" -C "$UV_TMP" || die "could not unpack uv"
+sudo install -m 755 "$UV_TMP/uv-x86_64-unknown-linux-gnu/uv" "$UV_TMP/uv-x86_64-unknown-linux-gnu/uvx" /usr/bin/ || die "could not install uv"
+rm -rf "$UV_TMP"
 
 sudo ln -sf /usr/bin/python3 /usr/bin/python
 
