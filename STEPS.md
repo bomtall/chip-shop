@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current step: **1.4**, waiting for review. Step 1.2 removed the old code instead of upgrading it.
+Current step: **1.5**, waiting for review. Step 1.4 is in pull request #54, waiting on the required status check on `main` to be renamed from `python` to `Check`.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -40,7 +40,7 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 | ☑ | 1.1b | Guard rails: `AGENTS.md` (with `CLAUDE.md` importing it), a pull request template, three more pre-commit hooks, and shared agent permissions in `.claude/settings.json` | The seven rules in `AGENTS.md`; the deny and ask lists | The hooks pass; a commit on `main` is refused locally |
 | ☑ | 1.2 | Start from scratch. Remove the old code: `src/`, `tests/`, `notebooks/`, the four root scripts, `requirements.txt`, `TODO.md` and `.env-template`. Start an empty `fryer` package with one test on Python 3.14: a new `pyproject.toml` and lock, uv upgraded and pinned, ruff alone, ty in place of mypy. CI and the hooks call uv directly | `pyproject.toml`: the pins, the build backend, the ruff ignore list. The hook changes in `.pre-commit-config.yaml`. That `machine-setup/` is untouched. The deletions and `uv.lock` are large but mechanical | `ruff check`, `ruff format --check`, `ty check` and the one test pass on 3.14, and every pre-commit hook passes |
 | ◐ | 1.4 | The CI Check job and a non-blocking Python 3.15 job, actions pinned by commit. The offline tests become a pre-commit hook, so one command runs every check. uv installed at the pinned version and checked against its release checksum, in CI and in `machine-setup/setup.sh`. No `justfile`: see the plan's decision 19 | The workflow file; the test hook; the uv install lines in `machine-setup/setup.sh` | `uv sync --locked && uv run pre-commit run --all-files` pass on a fresh clone on 3.14 and 3.15, and in CI; a uv download with the wrong checksum is refused |
-| ☐ | 1.5 | `AGENTS.md` brought up to date with the new commands, and a shorter `README.md` | That the commands in `AGENTS.md` are the ones that now exist | An agent given only the repo runs the checks without help |
+| ◐ | 1.5 | `AGENTS.md` brought up to date with the new commands, and a shorter `README.md` | That the commands in `AGENTS.md` are the ones that now exist | An agent given only the repo runs the checks without help |
 
 ## Phase 2: Core model
 
