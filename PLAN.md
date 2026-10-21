@@ -741,8 +741,10 @@ An asset is looked up in the write location first, then in each read location in
 
 **A second guard in code**, in case a path is misconfigured:
 
-- Settings refuse to start if the write location is the prod tree and the process is not `fryer-prod` with `FRYER_ENV=prod`.
+- Settings refuse to start if the write location is the prod tree and the process is not `fryer-prod` with `FRYER_ENV=prod`; the same holds for test and `fryer-test`. The user is taken from the process's user id, not `$USER`.
 - The test suite refuses to run if any read or write location points at prod or test.
+- Code recognises a space by a `.fryer-space` file at its root naming it, written by the machine setup, so no machine path is in the repo. A path inside a space counts as that space, and a marker that cannot be read is an error, not a pass.
+- Paths in `FRYER_PATH_WRITE` and `FRYER_PATH_READ` must be absolute; `FRYER_PATH_READ` is separated by `:` like `PATH`.
 
 **Changes needed to the current machine setup:**
 
