@@ -1,4 +1,3 @@
-import re
 import tomllib
 from datetime import timedelta
 from typing import TYPE_CHECKING, Annotated, Literal, Self
@@ -18,17 +17,20 @@ if TYPE_CHECKING:
 
     from pydantic_core import ErrorDetails
 
-_NAME = re.compile(r"[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*")
-_IDENTIFIER = re.compile(r"[a-z][a-z0-9_]*")
-_BUILD = re.compile(r"fryer(\.[a-z][a-z0-9_]*)+:[a-z_][a-z0-9_]*")
-_VERIFY = re.compile(r"full|examples|keys:[1-9][0-9]*")
-
 # A source makes a raw asset named raw.<name>, so raw is not free as a namespace
 RAW_PREFIX = "raw."
 
 
+def _is_word(text: str) -> bool:
+    # Lower-case ASCII letters, digits and underscores, starting with a letter
+    return (
+        text.isascii() and text.isidentifier() and text[:1].isalpha() and text.islower()
+    )
+
+
 def _name(value: str) -> str:
-    if not _NAME.fullmatch(value):
+    namespace, _, asset = value.partition(".")
+    if not (_is_word(namespace) and _is_word(asset)):
         msg = (
             f"{value!r} is not a name: a namespace and an asset, lower-case and"
             " joined by one dot, such as land_registry.price_paid"
@@ -44,7 +46,7 @@ def _readable(value: str) -> str:
 
 
 def _identifier(value: str) -> str:
-    if not _IDENTIFIER.fullmatch(value):
+    if not _is_word(value):
         msg = (
             f"{value!r} is not a name: lower case letters, digits and underscores,"
             " starting with a letter"
@@ -55,7 +57,15 @@ def _identifier(value: str) -> str:
 
 def _build(value: str) -> str:
     # The code hash follows only first-party code, so a build must live in fryer
-    if not _BUILD.fullmatch(value):
+    module, colon, function = value.partition(":")
+    package, *modules = module.split(".")
+    if not (
+        colon
+        and package == "fryer"
+        and modules
+        and all(map(_is_word, modules))
+        and _is_word(function)
+    ):
         msg = (
             f"{value!r} is not a build: a function in fryer, written module:function,"
             " such as fryer.derive.prices:by_lsoa"
@@ -65,7 +75,9 @@ def _build(value: str) -> str:
 
 
 def _verify(value: str) -> str:
-    if not _VERIFY.fullmatch(value):
+    count = value.removeprefix("keys:")
+    sampled = value != count and count.isascii() and count.isdigit() and int(count) > 0
+    if value not in {"full", "examples"} and not sampled:
         msg = f"{value!r} is not a proof level: full, examples, or keys:N"
         raise ValueError(msg)
     return value

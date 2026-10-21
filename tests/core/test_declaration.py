@@ -110,6 +110,12 @@ def _write(*, directory: Path, name: str, text: str) -> Path:
     return path
 
 
+def _problems(*, path: Path) -> str:
+    with pytest.raises(DeclarationError) as raised:
+        load_declaration(path=path)
+    return str(raised.value)
+
+
 def test_land_registry_loads() -> None:
     declaration = load_declaration(path=DATASETS / "land_registry.price_paid.toml")
 
@@ -346,21 +352,17 @@ def test_bad_file_fails_clearly(
     assert old in MINIMAL
     path = _write(directory=tmp_path, name=name, text=MINIMAL.replace(old, new, 1))
 
-    with pytest.raises(DeclarationError) as raised:
-        load_declaration(path=path)
+    problems = _problems(path=path)
 
-    assert str(raised.value).startswith(f"{path}:")
-    assert expected in str(raised.value)
+    assert problems.startswith(f"{path}:")
+    assert expected in problems
 
 
 def test_derived_without_build_fails(tmp_path: Path) -> None:
     text = DERIVED.replace('build = "fryer.derive.sales:by_area"\n', "", 1)
     path = _write(directory=tmp_path, name="derived.sales_by_area", text=text)
 
-    with pytest.raises(
-        DeclarationError, match="an asset built from others needs a build function"
-    ):
-        load_declaration(path=path)
+    assert "an asset built from others needs a build function" in _problems(path=path)
 
 
 def test_derived_with_unknown_mapping_fails(tmp_path: Path) -> None:
@@ -369,11 +371,9 @@ def test_derived_with_unknown_mapping_fails(tmp_path: Path) -> None:
     )
     path = _write(directory=tmp_path, name="derived.sales_by_area", text=text)
 
-    with pytest.raises(
-        DeclarationError,
-        match=r"reads\.example\.areas: Input should be 'same', 'rollup', 'all' or",
-    ):
-        load_declaration(path=path)
+    assert "reads.example.areas: Input should be 'same', 'rollup'" in _problems(
+        path=path
+    )
 
 
 def test_build_without_table_fails(tmp_path: Path) -> None:
@@ -384,10 +384,7 @@ def test_build_without_table_fails(tmp_path: Path) -> None:
     )
     path = _write(directory=tmp_path, name="example.sales", text=text)
 
-    with pytest.raises(
-        DeclarationError, match=r"build makes a table, so it needs \[table\]"
-    ):
-        load_declaration(path=path)
+    assert "build makes a table, so it needs [table]" in _problems(path=path)
 
 
 def test_derived_without_table_fails(tmp_path: Path) -> None:
@@ -397,10 +394,7 @@ def test_derived_without_table_fails(tmp_path: Path) -> None:
         text=DERIVED.split("[table]", maxsplit=1)[0],
     )
 
-    with pytest.raises(
-        DeclarationError, match=r"a table built from others needs \[table\]"
-    ):
-        load_declaration(path=path)
+    assert "a table built from others needs [table]" in _problems(path=path)
 
 
 @pytest.mark.parametrize("verify", ["full", "examples", "keys:3"])
@@ -458,8 +452,42 @@ def test_reads_a_bad_name_fails(tmp_path: Path) -> None:
     )
     path = _write(directory=tmp_path, name="derived.sales_by_area", text=text)
 
-    with pytest.raises(
-        DeclarationError,
-        match=r"reads\.raw\.example\.areas\.extra\.\[key\]: '[^']+' is not a name",
-    ):
-        load_declaration(path=path)
+    assert (
+        "reads.raw.example.areas.extra.[key]: 'example.areas.extra' is not a name"
+        in _problems(path=path)
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "expected"),
+    [
+        pytest.param("name", "prïces.sales", "is not a name", id="non-ascii name"),
+        pytest.param("name", "Example.sales", "is not a name", id="capital in name"),
+        pytest.param("name", "1example.sales", "is not a name", id="leading digit"),
+        pytest.param(
+            "name", "_example.sales", "is not a name", id="leading underscore"
+        ),
+        pytest.param("name", "example.", "is not a name", id="no asset"),
+        pytest.param("name", "example", "is not a name", id="no namespace"),
+        pytest.param("verify", "keys:0", "is not a proof level", id="no keys"),
+        pytest.param("verify", "keys:²", "is not a proof level", id="superscript"),
+        pytest.param("verify", "keys:", "is not a proof level", id="no count"),
+        pytest.param("verify", "keys:-1", "is not a proof level", id="negative"),
+        pytest.param("build", "fryer:clean", "is not a build", id="no module"),
+        pytest.param("build", "fryer.clean.sales", "is not a build", id="no function"),
+        pytest.param("build", "fryer..sales:clean", "is not a build", id="empty part"),
+        pytest.param("build", "fryer.clean:Clean", "is not a build", id="capital"),
+        pytest.param("build", "fryerx.clean:fn", "is not a build", id="other package"),
+    ],
+)
+def test_bad_words_fail(tmp_path: Path, field: str, value: str, expected: str) -> None:
+    text = MINIMAL.replace(
+        'attribution = "Synthetic"',
+        f'attribution = "Synthetic"\n{field} = "{value}"',
+        1,
+    )
+    if field == "name":
+        text = text.replace('name = "example.sales"\n', "", 1)
+    path = _write(directory=tmp_path, name="example.sales", text=text)
+
+    assert f"{field}: {value!r} {expected}" in _problems(path=path)
