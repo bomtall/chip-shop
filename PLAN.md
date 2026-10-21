@@ -196,11 +196,12 @@ The runner, CLI, tests and docs all work from that declaration.
 - Assets form a directed acyclic graph: raw assets are usually the roots, and every other asset declares what it reads. A raw asset may itself read an upstream table to decide what to fetch (see Beyond tables).
 - An asset can only read other assets through the store, never files by path, so the declared dependencies are the real ones.
 - The graph is validated at load time: every dependency exists and there are no cycles.
+- **Names** are a namespace and an asset joined by one dot: `land_registry.price_paid`. The namespace is the publisher (`land_registry`, `ons`, `news`) or the role (`derived`, `report`). A declaration's file is named after it: `datasets/land_registry.price_paid.toml`. A source's raw asset is `raw.` plus that name, the only three-part names, and `raw` is not free as a namespace.
 
 ```
-raw.land_registry ──> land_registry.price_paid ──┐
-raw.ons_postcode  ──> ons.postcode_directory ────┼──> derived.price_paid_by_lsoa ──> report.prices
-raw.ons_geo       ──> ons.boundaries ────────────┘
+raw.land_registry.price_paid ──> land_registry.price_paid ──┐
+raw.ons.postcode_directory   ──> ons.postcode_directory ────┼──> derived.price_paid_by_lsoa ──> report.prices
+raw.ons.boundaries           ──> ons.boundaries ────────────┘
 ```
 
 **Expected keys are declared in config**, one of three ways:
@@ -223,7 +224,7 @@ A downstream asset takes its keys from upstream through a declared mapping:
 **What a declaration looks like.** Illustrative only; the field names are settled in phase 2.
 
 ```toml
-# datasets/land_registry_price_paid.toml
+# datasets/land_registry.price_paid.toml
 name    = "land_registry.price_paid"
 licence = "OGL-3.0; extra conditions on address fields"
 verify  = "full"
@@ -253,7 +254,7 @@ map = { D = "detached", S = "semi_detached", T = "terraced", F = "flat", O = "ot
 ```
 
 ```toml
-# datasets/price_paid_by_lsoa.toml
+# datasets/derived.price_paid_by_lsoa.toml
 name  = "derived.price_paid_by_lsoa"
 build = "fryer.derive.price_paid:by_lsoa"
 
