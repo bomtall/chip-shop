@@ -23,7 +23,7 @@ A step that turns out too big to review in one sitting is split before it is rev
 | ◐ | Changes made, waiting for your review |
 | ☑ | Merged |
 
-Current step: **2.4**, waiting for review. Phase 1 and steps 2.1 to 2.3 are merged.
+Current step: **2.5**, waiting for review. Phase 1 and steps 2.1 to 2.4 are merged.
 
 Steps for phases 1 to 4 are final. Steps for later phases are a first cut: each phase's steps are cut again when the phase before it lands, because what is learnt on the way changes them.
 
@@ -51,8 +51,8 @@ In order. Step 1.2 removes the old code and starts an empty project. There is no
 | ☑ | 2.1 | The dependencies phases 2 to 4 need, added at once: polars and pydantic, and hypothesis for tests. duckdb waits for 3.1, where it is first used, so the Python 3.15 job stays green until then. Every other package waits for the step that needs it | The list, and that nothing is added "just in case" | The lock resolves and the checks pass on 3.14 and 3.15 |
 | ☑ | 2.2 | Settings and the four spaces: `FRYER_ENV`, the write location, the ordered read locations, the prod write guard | The guard's conditions; the environment variable names | The guard and the read order are tested |
 | ☑ | 2.3 | The asset declaration schema as pydantic models, with the Land Registry TOML as the first file. Carries the later fields: format, collection interval, reads on a raw asset, access class | Field names, since every dataset will use them; the error messages for a bad file | A valid file loads; each kind of invalid file fails clearly; a news feed declaration loads |
-| ◐ | 2.4 | The `Store` interface, its contract tests, and an in-memory fake. The access class is a level of the layout | The six methods; whether anything leaks the layout on disk | The contract tests pass against the fake |
-| ☐ | 2.5 | The ledger export schema (nine tables) and a sample export | Column names and types; this is all the console will ever read | The sample loads and matches the schema |
+| ☑ | 2.4 | The `Store` interface, its contract tests, and an in-memory fake. The access class is a level of the layout | The six methods; whether anything leaks the layout on disk | The contract tests pass against the fake |
+| ◐ | 2.5 | The ledger export schema (nine tables) and a sample export | Column names and types; this is all the console will ever read | The sample loads and matches the schema |
 | ☐ | 2.6 | The validator, check and profile types | The validator signature; what a profile holds | One trivial validator passes and fails as it should |
 | ☐ | 2.7 | The JSON printed by `plan`, `run` and `status` | Field names; these become the console's and CI's input | Schemas exist, with one golden example each |
 | ☐ | 2.8 | The clock: UTC and injectable | That nothing else reads the system time | Tests freeze and advance time |

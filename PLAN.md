@@ -1095,19 +1095,24 @@ class Check(BaseModel, frozen=True):          # what every validator returns
 Validator = Callable[[pl.LazyFrame, Profile, Mapping[str, Any]], Check]
 ```
 
-The ledger export is a set of Parquet tables, and is the only thing the console reads besides the data itself:
+The ledger export is a set of Parquet tables, and is the only thing the console reads besides the data itself. Its columns, their types and which may be null were settled in step 2.5, in `fryer.store.ledger_export`:
 
 | Table | One row per |
 |---|---|
-| `runs` | Run: id, start, end, git SHA, image digest, outcome |
-| `steps` | Step of a run: key, action, duration, bytes, outcome |
-| `versions` | Built object: asset, key, content hash, data id and its four parts, run |
-| `inputs` | Input of a version: the content hash it was built from |
-| `fetches` | Raw fetch: source, URL, ETag, time, hash, size |
+| `runs` | Run: id, start, end, git SHA and whether the tree was dirty, image digest, outcome |
+| `steps` | Step of a run: action, asset and key where it has them, start, end, bytes written, spend, outcome, error |
+| `versions` | Built object under one data id: asset, key, content hash, data id and its four parts, size, status, run |
+| `inputs` | Input of a data id: the asset, key and content hash it was built from |
+| `fetches` | Raw fetch: asset, key, URL, time, ETag, Last-Modified, hash, size, fetch code hash |
 | `snapshot_entries` | Pointer in a snapshot: run, asset, key, content hash |
-| `profiles` | Statistic of a column of a version |
-| `checks` | Validator result for a version |
-| `waivers` | Waiver applied to a held key |
+| `profiles` | Statistic of a column of an object, by content hash; a share also names its category |
+| `checks` | Validator result for an object in a run: column where it has one, passed, measured, expected |
+| `waivers` | Waiver applied to a held key: content hash, validator, measured value, reason |
+
+- Each table is a typed row class, and its Parquet schema is derived from the class: `| None` marks a column that may be null. The runner can record the same rows in the ledger as they happen.
+- Each table is one file, `<table>.parquet`. An export is written whole into a new directory, so it never mixes the tables of two runs.
+- Times are UTC. A column holding one of a fixed list of values, such as an outcome, is a Python enum in the row and a polars enum in the file, so a value outside the list can be neither built nor written.
+- Reading refuses a missing table or column, an unexpected one, or a wrong type, so a console built against an older export fails clearly instead of misreading it.
 
 After that, a change to a contract needs both owners, because it can break every track at once.
 
