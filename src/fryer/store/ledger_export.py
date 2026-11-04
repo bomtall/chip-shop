@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict
 
 from fryer.core.declaration import AssetName
 from fryer.store.interface import ContentHash, DataId, RunId
+from fryer.validate.validator import ValidatorName
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
@@ -157,7 +158,7 @@ class CheckRow(Row):
     asset: AssetName
     key: str
     content_hash: ContentHash
-    validator: str
+    validator: ValidatorName
     # None for a check of the whole table, such as its row count
     column_name: str | None
     passed: bool
@@ -172,7 +173,7 @@ class WaiverRow(Row):
     key: str
     # A waiver names the content it excuses, so it cannot excuse a later anomaly
     content_hash: ContentHash
-    validator: str
+    validator: ValidatorName
     column_name: str | None
     measured: str
     reason: str

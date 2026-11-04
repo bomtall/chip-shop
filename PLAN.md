@@ -512,6 +512,7 @@ The alert for a held key states the validator, the measured and expected values,
 
 - Validators are aggregate queries that stream; none loads a table.
 - Profiles store the underlying sums per key, so the mean, standard deviation, skew and kurtosis of a whole asset are combined exactly from its keys without rescanning. Quantiles are combined approximately from sketches.
+- What a profile holds, settled in step 2.6: the row count, and for every column its count of values and of nulls. A number column adds its minimum, maximum and central moments, which combine stably where raw power sums lose precision on values as large as prices. A time column adds its earliest and latest. A text column adds its distinct count, its shortest and longest lengths, and how often each value occurs where the values are a fixed set. A flag column adds its count of true. The quantile sketch is added in step 5.1, with the library that computes it.
 
 **Validators are tested like any other code.** Each has unit tests, and each example dataset has corrupted variants (a duplicated key, a shifted mean, a future date) that the configured validators must catch. A validator that stops catching its defect fails CI.
 
@@ -1086,13 +1087,23 @@ class Store(Protocol):                        # one per access class of one spac
     def resolve(self, *, asset: str, at: RunId | None = None) -> Mapping[str, ContentHash]: ...
     def scan(self, *, asset: str, at: RunId | None = None) -> pl.LazyFrame: ...
 
-class Check(BaseModel, frozen=True):          # what every validator returns
-    validator: str
+class Check(BaseModel, frozen=True):          # what every validator returns; settled in step 2.6
+    validator: ValidatorName                  # an enum, never removed once used
+    column: str | None                        # None for a check of the whole table
     passed: bool
     measured: float | str | None
-    expected: str
+    expected: str                             # the rule as a person reads it
 
-Validator = Callable[[pl.LazyFrame, Profile, Mapping[str, Any]], Check]
+class Subject:                                # what a validator judges: one built key
+    asset: str
+    key: str
+    data: pl.LazyFrame                        # scanned only by validators that need rows
+    profile: Profile
+    baseline: tuple[Profile, ...]             # previous version and neighbours, for drift
+
+class Validator(BaseModel, ABC):              # one class per validator; its fields are its parameters
+    name: ClassVar[ValidatorName]
+    def check(self, *, subject: Subject) -> Check: ...
 ```
 
 The ledger export is a set of Parquet tables, and is the only thing the console reads besides the data itself. Its columns, their types and which may be null were settled in step 2.5, in `fryer.store.ledger_export`:

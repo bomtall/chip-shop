@@ -18,6 +18,7 @@ from fryer.store.ledger_export import (
     to_frame,
     write_export,
 )
+from fryer.validate.validator import ValidatorName
 from tests.store.sample_export import FIRST, IMAGE, sample_tables
 
 START = datetime(2026, 11, 1, 2, 0, tzinfo=UTC)
@@ -125,7 +126,7 @@ def test_a_row_refuses_an_asset_that_is_not_a_name() -> None:
                 "asset": "not a name",
                 "key": "2024",
                 "content_hash": "0" * 64,
-                "validator": "kurtosis_bounds",
+                "validator": ValidatorName.ROW_COUNT_BOUNDS,
                 "column_name": None,
                 "measured": "1",
                 "reason": "a reason",
