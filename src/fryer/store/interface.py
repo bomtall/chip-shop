@@ -14,6 +14,8 @@ if TYPE_CHECKING:
 
 # SHA-256 in lower-case hex: of the bytes for raw, of the rows for a table
 ContentHash = NewType("ContentHash", str)
+# SHA-256 of what decides a built key's content: code, config, environment, inputs
+DataId = NewType("DataId", str)
 RunId = NewType("RunId", str)
 
 
