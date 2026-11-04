@@ -402,7 +402,9 @@ prod/
 
 **Keeping a move to DuckLake possible:**
 
-- Everything reads and writes through one small `Store` interface: write a key, publish a set of pointers, resolve an asset as of a run, scan an asset. Nothing else knows the layout on disk.
+- Everything reads and writes through one small `Store` interface: keep raw bytes and read them back, keep a table, publish a set of pointers, resolve an asset as of a run, scan an asset. Nothing else knows the layout on disk: raw is read back as a stream, never a path.
+- One store holds one access class of one space, matching the layout above, so no method names either.
+- Objects are stored by content alone and tied to a key only when published. A key holds one object; many fetches into one key, as a feed has, are bundled into one object, as web pages already are.
 - Data ids, content hashes, the ledger, promotion and validation sit above the store and do not depend on it. A different store changes where the bytes live and how they are read, not how versions are identified.
 - The interface has its own contract tests. A DuckLake implementation would have to pass the same tests.
 - Only one implementation is built now, with no plugin system.
@@ -1076,9 +1078,10 @@ class KeyRef(BaseModel, frozen=True):         # one key of one asset
     asset: str                                # "land_registry.price_paid"
     key: str                                  # "2024"
 
-class Store(Protocol):
-    def put_raw(self, *, ref: KeyRef, source: Path) -> ContentHash: ...   # a key may hold many
-    def put_table(self, *, ref: KeyRef, table: pl.LazyFrame) -> ContentHash: ...
+class Store(Protocol):                        # one per access class of one space; settled in step 2.4
+    def put_raw(self, *, source: Path) -> ContentHash: ...                # stored by content, unpublished
+    def open_raw(self, *, content: ContentHash) -> AbstractContextManager[BinaryIO]: ...
+    def put_table(self, *, table: pl.LazyFrame, primary_key: Sequence[str]) -> ContentHash: ...
     def publish(self, *, run: RunId, pointers: Mapping[KeyRef, ContentHash]) -> None: ...
     def resolve(self, *, asset: str, at: RunId | None = None) -> Mapping[str, ContentHash]: ...
     def scan(self, *, asset: str, at: RunId | None = None) -> pl.LazyFrame: ...
