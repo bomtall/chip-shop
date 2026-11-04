@@ -42,7 +42,8 @@ Tests marked `integration` call real data sources. Run them only when asked.
 ## Writing code here
 
 - Match the code around it: naming, comment density, idiom.
-- Functions take keyword-only arguments and are fully typed.
+- Functions take keyword-only arguments, so every call names what it passes, and are fully typed.
+- Give arguments as few defaults as possible, so a call says what it wants instead of inheriting it.
 - Every change in behaviour comes with a test. No network in tests outside the `integration` marker.
 - Keep functions small and modules single-purpose. No dead or commented-out code.
 - Comments say why, not what. Do not add documentation files; names, types and schemas are the documentation.
