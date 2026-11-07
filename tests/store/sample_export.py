@@ -20,6 +20,7 @@ from fryer.store.ledger_export import (
     WaiverRow,
     to_frame,
 )
+from fryer.validate.validator import ValidatorName
 
 if TYPE_CHECKING:
     import polars as pl
@@ -420,11 +421,11 @@ def _held_check(*, run: RunId) -> CheckRow:
         asset=SALES,
         key="2025",
         content_hash=SALES_2025,
-        validator="kurtosis_bounds",
-        column_name="price",
+        validator=ValidatorName.ROW_COUNT_BOUNDS,
+        column_name=None,
         passed=False,
-        measured="412.5",
-        expected="at most 300",
+        measured="410000",
+        expected="between 500000 and 2000000 rows",
     )
 
 
@@ -435,22 +436,11 @@ def _checks() -> list[CheckRow]:
             asset=SALES,
             key="2024",
             content_hash=SALES_2024,
-            validator="kurtosis_bounds",
-            column_name="price",
-            passed=True,
-            measured="96.0",
-            expected="at most 300",
-        ),
-        CheckRow(
-            run=FIRST,
-            asset=SALES,
-            key="2024",
-            content_hash=SALES_2024,
-            validator="row_count_bounds",
+            validator=ValidatorName.ROW_COUNT_BOUNDS,
             column_name=None,
             passed=True,
             measured="900000",
-            expected="between 500000 and 2000000",
+            expected="between 500000 and 2000000 rows",
         ),
         _held_check(run=FIRST),
         _held_check(run=SECOND),
@@ -464,10 +454,10 @@ def _waivers() -> list[WaiverRow]:
             asset=SALES,
             key="2025",
             content_hash=SALES_2025,
-            validator="kurtosis_bounds",
-            column_name="price",
-            measured="412.5",
-            reason="A sale of a whole estate, confirmed against the source",
+            validator=ValidatorName.ROW_COUNT_BOUNDS,
+            column_name=None,
+            measured="410000",
+            reason="2025 is not over, so its key holds only part of a year",
         ),
     ]
 
